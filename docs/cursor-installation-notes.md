@@ -15,7 +15,7 @@
 ## First Launch
 - **First Launch Time**: [YOU FILL THIS IN]
 - **Initial Setup Required**: Yes onboarding simplified by connecting to VS Code and my GitHub
-- **Time to First Code**: [How long until you could start coding]
+- **Time to First Code**: 1 minute
 
 ## First Impressions
 - **UI/UX**: Looks like VS Code
@@ -24,7 +24,7 @@
 - **AI Features**: Agent and ask mode. Feels like GitHub Copilot
 
 ## Issues Encountered
-- [List any problems, errors, or confusion]
+- No problems
 
 ## Screenshots Taken
 - [ ] Download page
