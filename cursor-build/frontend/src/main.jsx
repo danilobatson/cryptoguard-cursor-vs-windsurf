@@ -2,12 +2,15 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { MantineProvider, createTheme } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { queryClient } from './lib/queryClient'
 import App from './App.jsx'
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import './index.css'
 
-// Enhanced theme with MUCH better text contrast
+// Enhanced theme with better contrast
 const theme = createTheme({
   colorScheme: 'dark',
   primaryColor: 'bitcoin',
@@ -22,18 +25,10 @@ const theme = createTheme({
       '#66BB6A', '#4CAF50', '#43A047', '#388E3C',
       '#2E7D32', '#1B5E20'
     ],
-    // Much better dark colors with high contrast
     dark: [
-      '#FFFFFF',    // 0 - brightest text
-      '#E9E9E9',    // 1 - very light text  
-      '#C1C2C5',    // 2 - light text
-      '#A6A7AB',    // 3 - medium light
-      '#909296',    // 4 - medium
-      '#5C5F66',    // 5 - medium dark
-      '#373A40',    // 6 - dark
-      '#2C2E33',    // 7 - darker
-      '#25262B',    // 8 - very dark
-      '#1A1B1E'     // 9 - darkest
+      '#FFFFFF', '#E9E9E9', '#C1C2C5', '#A6A7AB',
+      '#909296', '#5C5F66', '#373A40', '#2C2E33',
+      '#25262B', '#1A1B1E'
     ]
   },
   components: {
@@ -53,26 +48,6 @@ const theme = createTheme({
           backgroundColor: 'rgba(0, 0, 0, 0.95)',
           backdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(255, 193, 7, 0.4)'
-        },
-        main: {
-          backgroundColor: 'transparent'
-        }
-      }
-    },
-    Text: {
-      styles: {
-        root: {
-          // Ensure all text has good contrast
-          '&[data-variant="dimmed"]': {
-            color: 'var(--mantine-color-dark-2) !important' // Much lighter dimmed text
-          }
-        }
-      }
-    },
-    Alert: {
-      styles: {
-        body: {
-          color: 'var(--mantine-color-dark-0) !important' // White text in alerts
         }
       }
     }
@@ -81,9 +56,13 @@ const theme = createTheme({
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <MantineProvider theme={theme}>
-      <Notifications position="top-right" />
-      <App />
-    </MantineProvider>
+    <QueryClientProvider client={queryClient}>
+      <MantineProvider theme={theme}>
+        <Notifications position="top-right" />
+        <App />
+        {/* React Query Devtools - only in development */}
+        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      </MantineProvider>
+    </QueryClientProvider>
   </React.StrictMode>,
 )
