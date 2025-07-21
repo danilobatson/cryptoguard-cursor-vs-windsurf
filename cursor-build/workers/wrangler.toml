@@ -2,18 +2,25 @@ name = "cryptoguard-api"
 main = "api/index.js"
 compatibility_date = "2023-12-01"
 
-[env.development]
-vars = { ENVIRONMENT = "development" }
-
-[env.production] 
-vars = { ENVIRONMENT = "production" }
-
-# Durable Object bindings
 [[durable_objects.bindings]]
 name = "WEBSOCKET_MANAGER"
 class_name = "WebSocketManager"
 
-# Migration for Durable Objects (Free Plan)
+[[durable_objects.bindings]]
+name = "ALERT_ENGINE"
+class_name = "AlertEngine"
+
+[[kv_namespaces]]
+binding = "CRYPTO_CACHE"
+id = "77bbc1a0ad6c4a18a6ba4aec292b4458"
+
+[triggers]
+crons = ["*/30 * * * *"]  # Every 30 seconds
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["WebSocketManager"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["AlertEngine"]

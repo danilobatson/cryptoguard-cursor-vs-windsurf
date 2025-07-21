@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CryptoGuard AlertEngine Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background: #1a472a; border: 1px solid #28a745; }
+        .error { background: #472a1a; border: 1px solid #dc3545; }
+        .alert { background: #47361a; border: 1px solid #ffc107; }
+        .data { background: #1a3447; border: 1px solid #17a2b8; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .messages { height: 400px; overflow-y: auto; background: #2a2a2a; padding: 10px; border-radius: 5px; border: 1px solid #444; }
+        .message { margin: 5px 0; padding: 5px; border-radius: 3px; }
+        input { padding: 8px; margin: 5px; border: 1px solid #444; background: #333; color: #fff; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 CryptoGuard AlertEngine Test</h1>
+        
+        <div id="connectionStatus" class="status">Disconnected</div>
+        
+        <div>
+            <button onclick="connect()">Connect to AlertEngine</button>
+            <button onclick="disconnect()">Disconnect</button>
+            <button onclick="getStatus()">Get Status</button>
+            <button onclick="ping()">Ping</button>
+        </div>
+        
+        <div>
+            <h3>Set Custom Alert</h3>
+            Symbol: <input type="text" id="alertSymbol" value="bitcoin" placeholder="bitcoin">
+            Type: <select id="alertType">
+                <option value="price_above">Price Above</option>
+                <option value="price_below">Price Below</option>
+                <option value="sentiment_spike">Sentiment Spike</option>
+            </select>
+            Threshold: <input type="number" id="alertThreshold" value="125000" placeholder="125000">
+            <button onclick="setAlert()">Set Alert</button>
+        </div>
+        
+        <div>
+            <h3>Subscriptions</h3>
+            <button onclick="subscribe('bitcoin')">Subscribe Bitcoin</button>
+            <button onclick="subscribe('ethereum')">Subscribe Ethereum</button>
+            <button onclick="unsubscribe('bitcoin')">Unsubscribe Bitcoin</button>
+            <button onclick="unsubscribe('ethereum')">Unsubscribe Ethereum</button>
+        </div>
+        
+        <h3>Live Messages</h3>
+        <div id="messages" class="messages"></div>
+    </div>
+
+    <script>
+        let socket = null;
+        let messageCount = 0;
+
+        function connect() {
+            const wsUrl = 'wss://cryptoguard-api.cryptoguard-api.workers.dev/alerts';
+            
+            try {
+                socket = new WebSocket(wsUrl);
+                
+                socket.onopen = function(event) {
+                    updateStatus('Connected to AlertEngine!', 'connected');
+                    addMessage('✅ Connected to AlertEngine', 'connected');
+                };
+                
+                socket.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    handleMessage(data);
+                };
+                
+                socket.onclose = function(event) {
+                    updateStatus('Disconnected', 'error');
+                    addMessage('❌ Disconnected from AlertEngine', 'error');
+                    socket = null;
+                };
+                
+                socket.onerror = function(error) {
+                    updateStatus('Connection Error', 'error');
+                    addMessage('💥 Connection Error: ' + error, 'error');
+                };
+                
+            } catch (error) {
+                updateStatus('Failed to connect', 'error');
+                addMessage('💥 Failed to connect: ' + error, 'error');
+            }
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.close();
+            }
+        }
+
+        function ping() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'ping' }));
+                addMessage('📡 Ping sent', 'data');
+            }
+        }
+
+        function getStatus() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'get_status' }));
+                addMessage('📊 Status request sent', 'data');
+            }
+        }
+
+        function setAlert() {
+            const symbol = document.getElementById('alertSymbol').value;
+            const alertType = document.getElementById('alertType').value;
+            const threshold = parseFloat(document.getElementById('alertThreshold').value);
+            
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    type: 'set_alert',
+                    symbol: symbol,
+                    alertType: alertType,
+                    threshold: threshold
+                }));
+                addMessage(`🔔 Alert set: ${symbol} ${alertType} ${threshold}`, 'alert');
+            }
+        }
+
+        function subscribe(symbol) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'subscribe', symbol: symbol }));
+                addMessage(`➕ Subscribed to ${symbol}`, 'data');
+            }
+        }
+
+        function unsubscribe(symbol) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'unsubscribe', symbol: symbol }));
+                addMessage(`➖ Unsubscribed from ${symbol}`, 'data');
+            }
+        }
+
+        function handleMessage(data) {
+            messageCount++;
+            let messageClass = 'data';
+            let prefix = '📨';
+            
+            switch(data.type) {
+                case 'connected':
+                    prefix = '🔗';
+                    messageClass = 'connected';
+                    break;
+                case 'alert_triggered':
+                case 'default_alert':
+                    prefix = '🚨';
+                    messageClass = 'alert';
+                    break;
+                case 'data_update':
+                    prefix = '📊';
+                    messageClass = 'data';
+                    break;
+                case 'pong':
+                    prefix = '🏓';
+                    break;
+                case 'error':
+                    prefix = '❌';
+                    messageClass = 'error';
+                    break;
+            }
+            
+            addMessage(`${prefix} ${data.type}: ${JSON.stringify(data, null, 2)}`, messageClass);
+        }
+
+        function updateStatus(message, className) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + className;
+        }
+
+        function addMessage(message, className) {
+            const messagesEl = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message ' + className;
+            messageEl.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            messagesEl.appendChild(messageEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            
+            // Keep only last 100 messages
+            while (messagesEl.children.length > 100) {
+                messagesEl.removeChild(messagesEl.firstChild);
+            }
+        }
+
+        // Auto-connect on page load
+        window.onload = function() {
+            addMessage('🔧 AlertEngine Test Page Loaded', 'data');
+            addMessage('📡 Click "Connect to AlertEngine" to start testing', 'data');
+        };
+    </script>
+</body>
+</html>
