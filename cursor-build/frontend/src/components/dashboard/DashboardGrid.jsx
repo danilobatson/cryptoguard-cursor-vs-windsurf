@@ -10,7 +10,8 @@ import {
   Button,
   Box,
   Select,
-  Switch
+  Switch,
+  Tabs
 } from '@mantine/core'
 import { 
   IconSettings, 
@@ -19,13 +20,19 @@ import {
   IconPlayerPause,
   IconLayoutDashboard,
   IconTrendingUp,
-  IconBell
+  IconBell,
+  IconChartLine,
+  IconCards
 } from '@tabler/icons-react'
+import { useState } from 'react'
 import CryptoCard from './CryptoCard'
+import PriceChart from './PriceChart'
 import { useMultipleCrypto } from '../../hooks/useCryptoData'
 import useCryptoStore from '../../stores/useCryptoStore'
 
 const DashboardGrid = () => {
+  const [activeTab, setActiveTab] = useState('overview')
+  
   const { 
     isRealTimeActive, 
     startRealTime, 
@@ -36,7 +43,6 @@ const DashboardGrid = () => {
     addNotification
   } = useCryptoStore()
 
-  // Fetch multiple crypto assets
   const { 
     data: cryptoData, 
     isLoading, 
@@ -68,7 +74,7 @@ const DashboardGrid = () => {
       addNotification({
         type: 'success',
         title: 'Data Refreshed',
-        message: 'All cryptocurrency data has been updated'
+        message: 'All cryptocurrency data and charts have been updated'
       })
     } catch (error) {
       addNotification({
@@ -99,7 +105,7 @@ const DashboardGrid = () => {
             <Box>
               <Text size="lg" fw={700} c="white">Market Overview</Text>
               <Text size="sm" c="dimmed">
-                Live cryptocurrency market data powered by LunarCrush API
+                Live cryptocurrency market data with interactive price charts
               </Text>
             </Box>
           </Group>
@@ -159,187 +165,238 @@ const DashboardGrid = () => {
         </Group>
       </Card>
 
-      {/* Main Dashboard Grid */}
-      <Grid>
-        {/* Primary Assets - Larger Cards */}
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <CryptoCard
-            symbol="bitcoin"
-            data={cryptoData.bitcoin}
-            isLoading={isLoading}
-            isRealTime={isRealTimeActive}
-            variant="detailed"
-            onAddAlert={(symbol, data) => {
-              addNotification({
-                type: 'info',
-                title: 'Alert System',
-                message: `Price alert for ${data.name} will be available in next update`
-              })
-            }}
-            onViewChart={(symbol) => {
-              addNotification({
-                type: 'info', 
-                title: 'Chart View',
-                message: `Advanced charts for ${symbol} coming in next version`
-              })
-            }}
-          />
-        </Grid.Col>
+      {/* Dashboard Tabs */}
+      <Tabs value={activeTab} onChange={setActiveTab}>
+        <Tabs.List>
+          <Tabs.Tab value="overview" leftSection={<IconCards size={16} />}>
+            Overview
+          </Tabs.Tab>
+          <Tabs.Tab value="charts" leftSection={<IconChartLine size={16} />}>
+            Price Charts
+          </Tabs.Tab>
+          <Tabs.Tab value="analytics" leftSection={<IconTrendingUp size={16} />}>
+            Analytics
+          </Tabs.Tab>
+        </Tabs.List>
 
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <CryptoCard
-            symbol="ethereum"
-            data={cryptoData.ethereum}
-            isLoading={isLoading}
-            isRealTime={isRealTimeActive}
-            variant="detailed"
-            onAddAlert={(symbol, data) => {
-              addNotification({
-                type: 'info',
-                title: 'Alert System',
-                message: `Price alert for ${data.name} will be available in next update`
-              })
-            }}
-            onViewChart={(symbol) => {
-              addNotification({
-                type: 'info',
-                title: 'Chart View', 
-                message: `Advanced charts for ${symbol} coming in next version`
-              })
-            }}
-          />
-        </Grid.Col>
+        {/* Overview Tab */}
+        <Tabs.Panel value="overview" pt="md">
+          <Grid>
+            {/* Primary Assets Cards */}
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <CryptoCard
+                symbol="bitcoin"
+                data={cryptoData.bitcoin}
+                isLoading={isLoading}
+                isRealTime={isRealTimeActive}
+                variant="detailed"
+                onAddAlert={(symbol, data) => {
+                  addNotification({
+                    type: 'info',
+                    title: 'Alert System',
+                    message: `Price alert for ${data.name} will be available in next update`
+                  })
+                }}
+                onViewChart={(symbol) => {
+                  setActiveTab('charts')
+                  addNotification({
+                    type: 'success',
+                    title: 'Chart View',
+                    message: `Switched to ${symbol} price chart`
+                  })
+                }}
+              />
+            </Grid.Col>
 
-        {/* Quick Stats Row */}
-        <Grid.Col span={12}>
-          <Group grow>
-            <Card withBorder style={{ backgroundColor: 'rgba(76, 175, 80, 0.1)', textAlign: 'center' }}>
-              <Text size="xs" c="dimmed">Portfolio Value</Text>
-              <Text size="lg" fw={700} c="green">$0.00</Text>
-              <Text size="xs" c="dimmed">+0.00% (24h)</Text>
-            </Card>
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <CryptoCard
+                symbol="ethereum"
+                data={cryptoData.ethereum}
+                isLoading={isLoading}
+                isRealTime={isRealTimeActive}
+                variant="detailed"
+                onAddAlert={(symbol, data) => {
+                  addNotification({
+                    type: 'info',
+                    title: 'Alert System',
+                    message: `Price alert for ${data.name} will be available in next update`
+                  })
+                }}
+                onViewChart={(symbol) => {
+                  setActiveTab('charts')
+                  addNotification({
+                    type: 'success',
+                    title: 'Chart View',
+                    message: `Switched to ${symbol} price chart`
+                  })
+                }}
+              />
+            </Grid.Col>
 
-            <Card withBorder style={{ backgroundColor: 'rgba(33, 150, 243, 0.1)', textAlign: 'center' }}>
-              <Text size="xs" c="dimmed">Active Alerts</Text>
-              <Text size="lg" fw={700} c="blue">0</Text>
-              <Text size="xs" c="dimmed">0 triggered today</Text>
-            </Card>
+            {/* Quick Stats Row */}
+            <Grid.Col span={12}>
+              <Group grow>
+                <Card withBorder style={{ backgroundColor: 'rgba(76, 175, 80, 0.1)', textAlign: 'center' }}>
+                  <Text size="xs" c="dimmed">Portfolio Value</Text>
+                  <Text size="lg" fw={700} c="green">$0.00</Text>
+                  <Text size="xs" c="dimmed">+0.00% (24h)</Text>
+                </Card>
 
-            <Card withBorder style={{ backgroundColor: 'rgba(255, 193, 7, 0.1)', textAlign: 'center' }}>
-              <Text size="xs" c="dimmed">Data Status</Text>
-              <Text size="lg" fw={700} c="bitcoin">
-                {isRealTimeActive ? 'LIVE' : 'CACHED'}
+                <Card withBorder style={{ backgroundColor: 'rgba(33, 150, 243, 0.1)', textAlign: 'center' }}>
+                  <Text size="xs" c="dimmed">Active Alerts</Text>
+                  <Text size="lg" fw={700} c="blue">0</Text>
+                  <Text size="xs" c="dimmed">0 triggered today</Text>
+                </Card>
+
+                <Card withBorder style={{ backgroundColor: 'rgba(255, 193, 7, 0.1)', textAlign: 'center' }}>
+                  <Text size="xs" c="dimmed">Data Status</Text>
+                  <Text size="lg" fw={700} c="bitcoin">
+                    {isRealTimeActive ? 'LIVE' : 'CACHED'}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    {isRealTimeActive ? `${refreshInterval/1000}s interval` : 'Manual refresh'}
+                  </Text>
+                </Card>
+
+                <Card withBorder style={{ backgroundColor: 'rgba(156, 39, 176, 0.1)', textAlign: 'center' }}>
+                  <Text size="xs" c="dimmed">API Health</Text>
+                  <Text size="lg" fw={700} c="grape">100%</Text>
+                  <Text size="xs" c="dimmed">All systems operational</Text>
+                </Card>
+              </Group>
+            </Grid.Col>
+
+            {/* Action Cards */}
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <Card 
+                withBorder 
+                style={{ 
+                  backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                  border: '1px solid rgba(255, 193, 7, 0.3)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => addNotification({
+                  type: 'info',
+                  title: 'Alert Center',
+                  message: 'Alert management system coming soon!'
+                })}
+              >
+                <Stack align="center" gap="sm">
+                  <IconBell size={32} color="var(--mantine-color-bitcoin-6)" />
+                  <Text fw={600} c="bitcoin">Set Alert</Text>
+                  <Text size="sm" c="dimmed" ta="center">
+                    Create price or sentiment alerts
+                  </Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <Card 
+                withBorder 
+                style={{ 
+                  backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                  border: '1px solid rgba(76, 175, 80, 0.3)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => addNotification({
+                  type: 'info',
+                  title: 'Portfolio',
+                  message: 'Portfolio tracking coming in next update!'
+                })}
+              >
+                <Stack align="center" gap="sm">
+                  <IconTrendingUp size={32} color="var(--mantine-color-ethereum-6)" />
+                  <Text fw={600} c="ethereum">Portfolio</Text>
+                  <Text size="sm" c="dimmed" ta="center">
+                    Track your crypto holdings
+                  </Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <Card 
+                withBorder 
+                style={{ 
+                  backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                  border: '1px solid rgba(33, 150, 243, 0.3)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => window.open('https://lunarcrush.com', '_blank')}
+              >
+                <Stack align="center" gap="sm">
+                  <Text size="xl" fw={700}>🚀</Text>
+                  <Text fw={600} c="blue">LunarCrush</Text>
+                  <Text size="sm" c="dimmed" ta="center">
+                    Powered by social intelligence
+                  </Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <Card 
+                withBorder 
+                style={{ 
+                  backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                  border: '1px solid rgba(156, 39, 176, 0.3)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => setActiveTab('analytics')}
+              >
+                <Stack align="center" gap="sm">
+                  <Text size="xl" fw={700}>📊</Text>
+                  <Text fw={600} c="grape">Analytics</Text>
+                  <Text size="sm" c="dimmed" ta="center">
+                    View price charts & trends
+                  </Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
+          </Grid>
+        </Tabs.Panel>
+
+        {/* Charts Tab */}
+        <Tabs.Panel value="charts" pt="md">
+          <Grid>
+            <Grid.Col span={12}>
+              <PriceChart
+                symbol="bitcoin"
+                data={cryptoData.bitcoin}
+                isRealTime={isRealTimeActive}
+              />
+            </Grid.Col>
+            <Grid.Col span={12}>
+              <PriceChart
+                symbol="ethereum"
+                data={cryptoData.ethereum}
+                isRealTime={isRealTimeActive}
+              />
+            </Grid.Col>
+          </Grid>
+        </Tabs.Panel>
+
+        {/* Analytics Tab */}
+        <Tabs.Panel value="analytics" pt="md">
+          <Card withBorder>
+            <Stack align="center" gap="lg" style={{ minHeight: 300 }}>
+              <IconTrendingUp size={64} color="var(--mantine-color-blue-6)" />
+              <Text size="xl" fw={600} c="white">Advanced Analytics</Text>
+              <Text c="dimmed" ta="center">
+                Comprehensive market analysis, correlation matrices, and portfolio performance metrics coming soon.
               </Text>
-              <Text size="xs" c="dimmed">
-                {isRealTimeActive ? `${refreshInterval/1000}s interval` : 'Manual refresh'}
-              </Text>
-            </Card>
-
-            <Card withBorder style={{ backgroundColor: 'rgba(156, 39, 176, 0.1)', textAlign: 'center' }}>
-              <Text size="xs" c="dimmed">API Health</Text>
-              <Text size="lg" fw={700} c="grape">100%</Text>
-              <Text size="xs" c="dimmed">All systems operational</Text>
-            </Card>
-          </Group>
-        </Grid.Col>
-
-        {/* Action Cards */}
-        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-          <Card 
-            withBorder 
-            style={{ 
-              backgroundColor: 'rgba(255, 193, 7, 0.1)',
-              border: '1px solid rgba(255, 193, 7, 0.3)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onClick={() => addNotification({
-              type: 'info',
-              title: 'Alert Center',
-              message: 'Alert management system coming soon!'
-            })}
-          >
-            <Stack align="center" gap="sm">
-              <IconBell size={32} color="var(--mantine-color-bitcoin-6)" />
-              <Text fw={600} c="bitcoin">Set Alert</Text>
-              <Text size="sm" c="dimmed" ta="center">
-                Create price or sentiment alerts
-              </Text>
+              <Button variant="light" color="blue">
+                Get Notified
+              </Button>
             </Stack>
           </Card>
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-          <Card 
-            withBorder 
-            style={{ 
-              backgroundColor: 'rgba(76, 175, 80, 0.1)',
-              border: '1px solid rgba(76, 175, 80, 0.3)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onClick={() => addNotification({
-              type: 'info',
-              title: 'Portfolio',
-              message: 'Portfolio tracking coming in next update!'
-            })}
-          >
-            <Stack align="center" gap="sm">
-              <IconTrendingUp size={32} color="var(--mantine-color-ethereum-6)" />
-              <Text fw={600} c="ethereum">Portfolio</Text>
-              <Text size="sm" c="dimmed" ta="center">
-                Track your crypto holdings
-              </Text>
-            </Stack>
-          </Card>
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-          <Card 
-            withBorder 
-            style={{ 
-              backgroundColor: 'rgba(33, 150, 243, 0.1)',
-              border: '1px solid rgba(33, 150, 243, 0.3)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onClick={() => window.open('https://lunarcrush.com', '_blank')}
-          >
-            <Stack align="center" gap="sm">
-              <Text size="xl" fw={700}>🚀</Text>
-              <Text fw={600} c="blue">LunarCrush</Text>
-              <Text size="sm" c="dimmed" ta="center">
-                Powered by social intelligence
-              </Text>
-            </Stack>
-          </Card>
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-          <Card 
-            withBorder 
-            style={{ 
-              backgroundColor: 'rgba(156, 39, 176, 0.1)',
-              border: '1px solid rgba(156, 39, 176, 0.3)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onClick={() => addNotification({
-              type: 'info',
-              title: 'Analytics',
-              message: 'Advanced analytics dashboard coming soon!'
-            })}
-          >
-            <Stack align="center" gap="sm">
-              <Text size="xl" fw={700}>📊</Text>
-              <Text fw={600} c="grape">Analytics</Text>
-              <Text size="sm" c="dimmed" ta="center">
-                Deep market insights
-              </Text>
-            </Stack>
-          </Card>
-        </Grid.Col>
-      </Grid>
+        </Tabs.Panel>
+      </Tabs>
 
       {/* Debug Panel (Development Only) */}
       {import.meta.env.DEV && (
@@ -353,7 +410,8 @@ const DashboardGrid = () => {
             Interval: {refreshInterval/1000}s | 
             Notifications: {notifications.length} | 
             Loading: {isLoading ? '⏳' : '✅'} |
-            Error: {hasError ? '❌' : '✅'}
+            Error: {hasError ? '❌' : '✅'} |
+            Active Tab: {activeTab}
           </Text>
         </Card>
       )}

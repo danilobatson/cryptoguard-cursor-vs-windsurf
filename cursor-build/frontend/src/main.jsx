@@ -8,9 +8,10 @@ import { queryClient } from './lib/queryClient'
 import App from './App.jsx'
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
+import '@mantine/charts/styles.css'
 import './index.css'
 
-// Enhanced theme with better contrast
+// Enhanced theme with chart support
 const theme = createTheme({
   colorScheme: 'dark',
   primaryColor: 'bitcoin',
@@ -50,6 +51,23 @@ const theme = createTheme({
           borderBottom: '1px solid rgba(255, 193, 7, 0.4)'
         }
       }
+    },
+    SegmentedControl: {
+      styles: {
+        root: {
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        },
+        indicator: {
+          backgroundColor: 'var(--mantine-color-bitcoin-6)',
+        },
+        control: {
+          color: '#C1C2C5',
+          '&[data-active]': {
+            color: '#000000'
+          }
+        }
+      }
     }
   }
 })
@@ -60,7 +78,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <MantineProvider theme={theme}>
         <Notifications position="top-right" />
         <App />
-        {/* React Query Devtools - only in development */}
         {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
       </MantineProvider>
     </QueryClientProvider>

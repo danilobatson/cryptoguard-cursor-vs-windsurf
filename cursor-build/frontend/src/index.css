@@ -110,3 +110,64 @@ input:focus-visible {
   outline: 2px solid #FFC107;
   outline-offset: 2px;
 }
+
+/* Chart-specific enhancements */
+.mantine-LineChart-root,
+.mantine-AreaChart-root,
+.mantine-BarChart-root {
+  background: transparent !important;
+}
+
+.mantine-LineChart-tooltip,
+.mantine-AreaChart-tooltip,
+.mantine-BarChart-tooltip {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border: 1px solid rgba(255, 193, 7, 0.3) !important;
+  color: #FFFFFF !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+/* Chart legend styling */
+.recharts-legend-item-text {
+  color: #FFFFFF !important;
+}
+
+/* Chart grid lines */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Chart axis labels */
+.recharts-xAxis .recharts-text,
+.recharts-yAxis .recharts-text {
+  fill: #C1C2C5 !important;
+  font-size: 12px !important;
+}
+
+/* Chart animations */
+@keyframes chartGlow {
+  0% { 
+    filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.3));
+  }
+  50% { 
+    filter: drop-shadow(0 0 15px rgba(255, 193, 7, 0.6));
+  }
+  100% { 
+    filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.3));
+  }
+}
+
+.chart-glow {
+  animation: chartGlow 3s infinite ease-in-out;
+}
+
+/* Responsive chart adjustments */
+@media (max-width: 768px) {
+  .mantine-LineChart-root,
+  .mantine-AreaChart-root,
+  .mantine-BarChart-root {
+    height: 200px !important;
+  }
+}
