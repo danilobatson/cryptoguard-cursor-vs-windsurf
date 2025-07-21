@@ -546,3 +546,4 @@ export class AlertEngine {
 }
 
 export default AlertEngine;
+// Export for main entry point
