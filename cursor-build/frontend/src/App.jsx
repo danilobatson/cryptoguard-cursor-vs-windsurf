@@ -32,10 +32,10 @@ function App() {
                 className="crypto-pulse"
               />
               <Box>
-                <Title order={1} c="white" size="h2">
+                <Title order={1} style={{ color: '#FFFFFF' }} size="h2">
                   {import.meta.env.VITE_APP_NAME || 'CryptoGuard'}
                 </Title>
-                <Text size="sm" c="dimmed">
+                <Text size="md" fw={500} style={{ color: '#C1C2C5' }}>
                   Real-time Crypto Alert System
                 </Text>
               </Box>
@@ -48,13 +48,14 @@ function App() {
                 size="lg"
                 className="crypto-pulse"
               >
-                🟢 Live Data
+                🟢 LIVE DATA
               </Badge>
               <Button 
                 leftSection={<IconBell size={18} />}
                 variant="gradient"
                 gradient={{ from: 'bitcoin', to: 'ethereum', deg: 45 }}
                 size="md"
+                fw={600}
               >
                 Setup Alerts
               </Button>
@@ -71,19 +72,19 @@ function App() {
               shadow="lg" 
               padding="xl"
               style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%)',
                 backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
+                border: '1px solid rgba(255, 255, 255, 0.3)'
               }}
             >
               <Stack gap="lg">
                 <Group justify="space-between" align="flex-start">
                   <Box>
-                    <Title order={2} c="white" mb="xs">
+                    <Title order={2} style={{ color: '#FFFFFF' }} mb="sm">
                       <IconDashboard size={28} style={{ marginRight: 12 }} />
                       Live Market Dashboard
                     </Title>
-                    <Text c="dimmed" size="lg">
+                    <Text style={{ color: '#C1C2C5' }} size="lg" fw={500}>
                       Connected to your production Cloudflare Workers API with live LunarCrush data
                     </Text>
                   </Box>
@@ -92,8 +93,9 @@ function App() {
                     variant="gradient" 
                     gradient={{ from: 'bitcoin', to: 'ethereum', deg: 45 }}
                     size="xl"
+                    fw={600}
                   >
-                    Real-time
+                    REAL-TIME
                   </Badge>
                 </Group>
                 
@@ -107,16 +109,24 @@ function App() {
               title="🚀 Backend Status: Production Ready"
               icon={<IconTrendingUp />}
               style={{
-                background: 'rgba(76, 175, 80, 0.1)',
-                border: '1px solid rgba(76, 175, 80, 0.3)'
+                background: 'rgba(76, 175, 80, 0.15)',
+                border: '1px solid rgba(76, 175, 80, 0.4)'
               }}
             >
-              <Text size="md">
-                ✅ Cloudflare Workers API: <strong>94% verification score</strong><br/>
-                ✅ Live Data Sources: <strong>Bitcoin $116,960+ | Ethereum $3,741+</strong><br/>
-                ✅ WebSocket Connections: <strong>Active and operational</strong><br/>
-                ✅ Frontend Foundation: <strong>Ready for IDE battle!</strong>
-              </Text>
+              <Stack gap="xs">
+                <Text size="md" fw={600} style={{ color: '#FFFFFF' }}>
+                  ✅ Cloudflare Workers API: 94% verification score
+                </Text>
+                <Text size="md" fw={500} style={{ color: '#E9E9E9' }}>
+                  ✅ Live Data Sources: Bitcoin $116,960+ | Ethereum $3,741+
+                </Text>
+                <Text size="md" fw={500} style={{ color: '#C1C2C5' }}>
+                  ✅ WebSocket Connections: Active and operational
+                </Text>
+                <Text size="md" fw={600} c="green">
+                  ✅ Frontend Foundation: Ready for IDE battle!
+                </Text>
+              </Stack>
             </Alert>
           </Stack>
         </Container>

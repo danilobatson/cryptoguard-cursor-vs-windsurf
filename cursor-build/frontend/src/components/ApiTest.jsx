@@ -83,17 +83,27 @@ const ApiTest = () => {
 
   if (loading) {
     return (
-      <Card withBorder className="crypto-pulse" style={{ textAlign: 'center' }}>
+      <Card 
+        withBorder 
+        className="crypto-pulse" 
+        style={{ 
+          textAlign: 'center',
+          backgroundColor: 'rgba(255, 255, 255, 0.15)',
+          border: '1px solid rgba(255, 255, 255, 0.3)'
+        }}
+      >
         <Stack align="center" gap="lg">
           <Loader color="bitcoin" size="lg" type="dots" />
           <Box>
-            <Text size="lg" fw={500}>Connecting to Backend API...</Text>
-            <Text size="sm" c="dimmed">Testing Cloudflare Workers endpoint</Text>
+            <Text size="lg" fw={600} c="white">Connecting to Backend API...</Text>
+            <Text size="md" style={{ color: '#C1C2C5' }}>
+              Testing Cloudflare Workers endpoint
+            </Text>
           </Box>
           <Progress 
             value={75} 
             color="bitcoin" 
-            size="sm" 
+            size="md" 
             radius="xl" 
             striped 
             animated 
@@ -110,14 +120,19 @@ const ApiTest = () => {
         color="red" 
         icon={<IconX />}
         title="🚨 API Connection Failed"
-        style={{ border: '1px solid red' }}
+        style={{ 
+          border: '1px solid #f44336',
+          backgroundColor: 'rgba(244, 67, 54, 0.1)'
+        }}
       >
         <Stack gap="xs">
-          <Text fw={500}>Unable to connect to backend</Text>
-          <Text size="sm" c="dimmed">
+          <Text fw={600} style={{ color: '#FFFFFF' }}>
+            Unable to connect to backend
+          </Text>
+          <Text size="sm" style={{ color: '#E9E9E9' }}>
             Error: {error}
           </Text>
-          <Text size="sm" c="dimmed">
+          <Text size="sm" style={{ color: '#C1C2C5' }}>
             Endpoint: {apiBase}
           </Text>
           <Button 
@@ -143,17 +158,20 @@ const ApiTest = () => {
           color="green" 
           icon={<IconApi />}
           title="🟢 Backend API Connected"
-          style={{ border: '1px solid #4CAF50' }}
+          style={{ 
+            border: '1px solid #4CAF50',
+            backgroundColor: 'rgba(76, 175, 80, 0.15)'
+          }}
         >
           <Grid>
             <Grid.Col span={6}>
-              <Text size="sm">
-                <strong>Status:</strong> {health?.data?.status || health?.status}
+              <Text size="sm" fw={500} style={{ color: '#FFFFFF' }}>
+                Status: {health?.data?.status || health?.status}
               </Text>
             </Grid.Col>
             <Grid.Col span={6}>
-              <Text size="sm">
-                <strong>Version:</strong> {health?.data?.version || 'v3.0'}
+              <Text size="sm" fw={500} style={{ color: '#FFFFFF' }}>
+                Version: {health?.data?.version || 'v3.0'}
               </Text>
             </Grid.Col>
           </Grid>
@@ -169,21 +187,22 @@ const ApiTest = () => {
               withBorder 
               className="crypto-glow"
               style={{ 
-                background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%)',
-                border: '1px solid rgba(255, 193, 7, 0.3)'
+                background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 193, 7, 0.08) 100%)',
+                border: '1px solid rgba(255, 193, 7, 0.4)',
+                backgroundColor: 'rgba(255, 255, 255, 0.12)'
               }}
             >
-              <Stack gap="xs">
+              <Stack gap="sm">
                 <Group justify="space-between">
-                  <Text size="lg" fw={600} c="bitcoin">
+                  <Text size="lg" fw={700} c="bitcoin">
                     ₿ Bitcoin (BTC)
                   </Text>
                   <Badge color="bitcoin" variant="light">
-                    Live
+                    LIVE
                   </Badge>
                 </Group>
                 
-                <Text size="xl" fw={700} c="white">
+                <Text size="xl" fw={800} style={{ color: '#FFFFFF' }}>
                   <NumberFormatter 
                     value={bitcoinData.close || bitcoinData.price || bitcoinData.market_data?.price || 0} 
                     prefix="$" 
@@ -198,6 +217,7 @@ const ApiTest = () => {
                       color={getPriceChangeColor(bitcoinData.percent_change_24h)}
                       leftSection={getPriceChangeIcon(bitcoinData.percent_change_24h)}
                       variant="light"
+                      size="md"
                     >
                       {bitcoinData.percent_change_24h > 0 ? '+' : ''}
                       {bitcoinData.percent_change_24h.toFixed(2)}%
@@ -207,8 +227,10 @@ const ApiTest = () => {
 
                 {bitcoinData.galaxy_score && (
                   <Box>
-                    <Text size="xs" c="dimmed">Galaxy Score</Text>
-                    <Text fw={500} c="bitcoin">{bitcoinData.galaxy_score}/100</Text>
+                    <Text size="sm" style={{ color: '#C1C2C5' }}>Galaxy Score</Text>
+                    <Text fw={600} c="bitcoin" size="lg">
+                      {bitcoinData.galaxy_score}/100
+                    </Text>
                   </Box>
                 )}
               </Stack>
@@ -222,21 +244,22 @@ const ApiTest = () => {
             <Card 
               withBorder
               style={{ 
-                background: 'linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%)',
-                border: '1px solid rgba(76, 175, 80, 0.3)'
+                background: 'linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.08) 100%)',
+                border: '1px solid rgba(76, 175, 80, 0.4)',
+                backgroundColor: 'rgba(255, 255, 255, 0.12)'
               }}
             >
-              <Stack gap="xs">
+              <Stack gap="sm">
                 <Group justify="space-between">
-                  <Text size="lg" fw={600} c="ethereum">
+                  <Text size="lg" fw={700} c="ethereum">
                     Ξ Ethereum (ETH)
                   </Text>
                   <Badge color="ethereum" variant="light">
-                    Live
+                    LIVE
                   </Badge>
                 </Group>
                 
-                <Text size="xl" fw={700} c="white">
+                <Text size="xl" fw={800} style={{ color: '#FFFFFF' }}>
                   <NumberFormatter 
                     value={ethereumData.close || ethereumData.price || ethereumData.market_data?.price || 0} 
                     prefix="$" 
@@ -251,6 +274,7 @@ const ApiTest = () => {
                       color={getPriceChangeColor(ethereumData.percent_change_24h)}
                       leftSection={getPriceChangeIcon(ethereumData.percent_change_24h)}
                       variant="light"
+                      size="md"
                     >
                       {ethereumData.percent_change_24h > 0 ? '+' : ''}
                       {ethereumData.percent_change_24h.toFixed(2)}%
@@ -260,8 +284,10 @@ const ApiTest = () => {
 
                 {ethereumData.galaxy_score && (
                   <Box>
-                    <Text size="xs" c="dimmed">Galaxy Score</Text>
-                    <Text fw={500} c="ethereum">{ethereumData.galaxy_score}/100</Text>
+                    <Text size="sm" style={{ color: '#C1C2C5' }}>Galaxy Score</Text>
+                    <Text fw={600} c="ethereum" size="lg">
+                      {ethereumData.galaxy_score}/100
+                    </Text>
                   </Box>
                 )}
               </Stack>
@@ -270,16 +296,17 @@ const ApiTest = () => {
         )}
       </Grid>
 
-      <Divider />
+      <Divider color="rgba(255, 255, 255, 0.2)" />
 
       {/* Refresh Button */}
       <Group justify="center">
         <Button 
-          leftSection={<IconRefresh size={16} />}
+          leftSection={<IconRefresh size={18} />}
           variant="gradient"
           gradient={{ from: 'bitcoin', to: 'ethereum', deg: 45 }}
           onClick={testApiHealth}
           size="md"
+          fw={600}
         >
           Refresh Live Data
         </Button>

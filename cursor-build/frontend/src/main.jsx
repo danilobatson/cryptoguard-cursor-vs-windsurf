@@ -7,7 +7,7 @@ import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import './index.css'
 
-// Enhanced crypto theme with better contrast
+// Enhanced theme with MUCH better text contrast
 const theme = createTheme({
   colorScheme: 'dark',
   primaryColor: 'bitcoin',
@@ -22,33 +22,57 @@ const theme = createTheme({
       '#66BB6A', '#4CAF50', '#43A047', '#388E3C',
       '#2E7D32', '#1B5E20'
     ],
-    // Better dark colors with more contrast
+    // Much better dark colors with high contrast
     dark: [
-      '#FFFFFF', '#A6A7AB', '#909296', '#5C5F66',
-      '#373A40', '#2C2E33', '#25262B', '#1A1B1E',
-      '#141517', '#101113'
+      '#FFFFFF',    // 0 - brightest text
+      '#E9E9E9',    // 1 - very light text  
+      '#C1C2C5',    // 2 - light text
+      '#A6A7AB',    // 3 - medium light
+      '#909296',    // 4 - medium
+      '#5C5F66',    // 5 - medium dark
+      '#373A40',    // 6 - dark
+      '#2C2E33',    // 7 - darker
+      '#25262B',    // 8 - very dark
+      '#1A1B1E'     // 9 - darkest
     ]
   },
   components: {
     Card: {
       styles: {
         root: {
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 193, 7, 0.2)',
-          boxShadow: '0 8px 32px rgba(255, 193, 7, 0.1)'
+          backgroundColor: 'rgba(255, 255, 255, 0.12)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.25)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
         }
       }
     },
     AppShell: {
       styles: {
         header: {
-          backgroundColor: 'rgba(0, 0, 0, 0.9)',
-          backdropFilter: 'blur(10px)',
-          borderBottom: '1px solid rgba(255, 193, 7, 0.3)'
+          backgroundColor: 'rgba(0, 0, 0, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255, 193, 7, 0.4)'
         },
         main: {
           backgroundColor: 'transparent'
+        }
+      }
+    },
+    Text: {
+      styles: {
+        root: {
+          // Ensure all text has good contrast
+          '&[data-variant="dimmed"]': {
+            color: 'var(--mantine-color-dark-2) !important' // Much lighter dimmed text
+          }
+        }
+      }
+    },
+    Alert: {
+      styles: {
+        body: {
+          color: 'var(--mantine-color-dark-0) !important' // White text in alerts
         }
       }
     }

@@ -1,4 +1,4 @@
-/* Enhanced global styles for better UX */
+/* Enhanced global styles with perfect text contrast */
 :root {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.6;
@@ -8,21 +8,54 @@
 body {
   margin: 0;
   min-height: 100vh;
-  /* More vibrant gradient with better contrast */
+  /* Darker, more contrasted background */
   background: 
-    radial-gradient(ellipse at top, rgba(255, 193, 7, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom right, rgba(76, 175, 80, 0.1) 0%, transparent 50%),
-    linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+    radial-gradient(ellipse at top, rgba(255, 193, 7, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(76, 175, 80, 0.08) 0%, transparent 60%),
+    linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #0a0a0a 100%);
   background-attachment: fixed;
 }
 
-/* Better scrollbar */
+/* Force better text contrast globally */
+[data-mantine-color-scheme="dark"] {
+  --mantine-color-text: #FFFFFF !important;
+  --mantine-color-dimmed: #C1C2C5 !important;  /* Much lighter dimmed text */
+  --mantine-color-body: transparent;
+  --mantine-color-default: #FFFFFF;
+  --mantine-color-default-hover: #E9E9E9;
+}
+
+/* Override dimmed text to be more visible */
+[data-mantine-color-scheme="dark"] .mantine-Text-root[data-variant="dimmed"],
+[data-mantine-color-scheme="dark"] [style*="color: var(--mantine-color-dimmed)"] {
+  color: #C1C2C5 !important;
+}
+
+/* Better alert text */
+.mantine-Alert-root {
+  color: #FFFFFF !important;
+}
+
+.mantine-Alert-root .mantine-Text-root {
+  color: #FFFFFF !important;
+}
+
+/* Better card text */
+.mantine-Card-root .mantine-Text-root {
+  color: #FFFFFF !important;
+}
+
+.mantine-Card-root .mantine-Text-root[data-variant="dimmed"] {
+  color: #C1C2C5 !important;
+}
+
+/* Enhanced scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
 }
 
@@ -42,8 +75,8 @@ body {
     transform: scale(1);
   }
   50% { 
-    opacity: 0.8; 
-    transform: scale(1.02);
+    opacity: 0.9; 
+    transform: scale(1.01);
   }
   100% { 
     opacity: 1; 
@@ -52,9 +85,9 @@ body {
 }
 
 @keyframes glow {
-  0% { box-shadow: 0 0 5px rgba(255, 193, 7, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(255, 193, 7, 0.6); }
-  100% { box-shadow: 0 0 5px rgba(255, 193, 7, 0.3); }
+  0% { box-shadow: 0 0 10px rgba(255, 193, 7, 0.3); }
+  50% { box-shadow: 0 0 25px rgba(255, 193, 7, 0.6), 0 0 35px rgba(76, 175, 80, 0.3); }
+  100% { box-shadow: 0 0 10px rgba(255, 193, 7, 0.3); }
 }
 
 .crypto-pulse {
@@ -62,12 +95,18 @@ body {
 }
 
 .crypto-glow {
-  animation: glow 2s infinite ease-in-out;
+  animation: glow 2.5s infinite ease-in-out;
 }
 
-/* Better text contrast */
-[data-mantine-color-scheme="dark"] {
-  --mantine-color-text: #ffffff;
-  --mantine-color-dimmed: #909296;
-  --mantine-color-body: transparent;
+/* Text selection */
+::selection {
+  background: rgba(255, 193, 7, 0.3);
+  color: #FFFFFF;
+}
+
+/* Focus styles */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #FFC107;
+  outline-offset: 2px;
 }
