@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CryptoGuard WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background: #2d5a27; }
+        .disconnected { background: #5a2727; }
+        .message { background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 3px; font-family: monospace; }
+        button { padding: 10px 20px; margin: 5px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        #messages { height: 400px; overflow-y: auto; border: 1px solid #444; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 CryptoGuard WebSocket Test</h1>
+        <div id="status" class="status disconnected">Disconnected</div>
+        
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+        <button onclick="subscribeBitcoin()">Subscribe to Bitcoin</button>
+        <button onclick="subscribeEthereum()">Subscribe to Ethereum</button>
+        <button onclick="ping()">Send Ping</button>
+        <button onclick="clearMessages()">Clear Messages</button>
+        
+        <h3>Messages:</h3>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        const wsUrl = 'wss://cryptoguard-api.cryptoguard-api.workers.dev/realtime';
+        
+        function connect() {
+            if (ws) {
+                addMessage('Already connected');
+                return;
+            }
+            
+            addMessage('Connecting to: ' + wsUrl);
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function(event) {
+                document.getElementById('status').textContent = 'Connected';
+                document.getElementById('status').className = 'status connected';
+                addMessage('✅ Connected to CryptoGuard WebSocket!');
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                addMessage('📨 Received: ' + JSON.stringify(data, null, 2));
+            };
+            
+            ws.onclose = function(event) {
+                document.getElementById('status').textContent = 'Disconnected';
+                document.getElementById('status').className = 'status disconnected';
+                addMessage('❌ Connection closed');
+                ws = null;
+            };
+            
+            ws.onerror = function(error) {
+                addMessage('🔥 Error: ' + error);
+            };
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+        
+        function subscribeBitcoin() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'subscribe',
+                    symbol: 'bitcoin'
+                }));
+                addMessage('📤 Sent: Subscribe to Bitcoin');
+            } else {
+                addMessage('❌ Not connected');
+            }
+        }
+        
+        function subscribeEthereum() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'subscribe', 
+                    symbol: 'ethereum'
+                }));
+                addMessage('📤 Sent: Subscribe to Ethereum');
+            } else {
+                addMessage('❌ Not connected');
+            }
+        }
+        
+        function ping() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'ping'
+                }));
+                addMessage('📤 Sent: Ping');
+            } else {
+                addMessage('❌ Not connected');
+            }
+        }
+        
+        function addMessage(message) {
+            const div = document.createElement('div');
+            div.className = 'message';
+            div.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            document.getElementById('messages').appendChild(div);
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+        }
+        
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
