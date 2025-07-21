@@ -1,190 +1,221 @@
 /**
  * CryptoGuard API v3.0 - Complete Production API
- * Step 3.3 - Enhanced with Security, Performance, and Complete Endpoints
+ * Fixed error handling and robust crypto data
  */
 
 import { SecurityMiddleware, schemas } from './middleware/security.js';
 import { ErrorHandler, ValidationError } from './middleware/errorHandler.js';
-import { PerformanceOptimizer, ResponseBuilder } from './middleware/performance.js';
+import {
+	PerformanceOptimizer,
+	ResponseBuilder,
+} from './middleware/performance.js';
 
-// CRITICAL: Export Durable Objects for Wrangler
+// Export Durable Objects
 export { AlertEngine } from '../durable-objects/AlertEngine.js';
 export { WebSocketManager } from '../durable-objects/WebSocketManager.js';
 
 export default {
-  async fetch(request, env, ctx) {
-    const startTime = Date.now();
+	async fetch(request, env, ctx) {
+		const startTime = Date.now();
 
-    try {
-      // Handle OPTIONS requests for CORS
-      if (request.method === 'OPTIONS') {
-        return SecurityMiddleware.handleOptions(request);
-      }
+		try {
+			// Handle OPTIONS requests for CORS
+			if (request.method === 'OPTIONS') {
+				return SecurityMiddleware.handleOptions(request);
+			}
 
-      // Apply rate limiting
-      const rateLimitCheck = await SecurityMiddleware.rateLimit(request, env);
-      if (rateLimitCheck) return rateLimitCheck;
+			// Apply rate limiting
+			const rateLimitCheck = await SecurityMiddleware.rateLimit(request, env);
+			if (rateLimitCheck) return rateLimitCheck;
 
-      const corsHeaders = SecurityMiddleware.getCorsHeaders();
-      const url = new URL(request.url);
-      const path = url.pathname;
+			const corsHeaders = SecurityMiddleware.getCorsHeaders();
+			const url = new URL(request.url);
+			const path = url.pathname;
 
-      // Health check endpoint
-      if (path === '/health') {
-        const health = await getSystemHealth(env);
-        return new ResponseBuilder()
-          .setData(health)
-          .setMetadata({ version: '3.0', response_time: Date.now() - startTime })
-          .setCaching(30)
-          .setHeaders(corsHeaders)
-          .build();
-      }
+			// Health check endpoint
+			if (path === '/health') {
+				const health = await getSystemHealth(env);
+				return new ResponseBuilder()
+					.setData(health)
+					.setMetadata({
+						version: '3.0',
+						response_time: Date.now() - startTime,
+					})
+					.setCaching(30)
+					.setHeaders(corsHeaders)
+					.build();
+			}
 
-      // System stats endpoint
-      if (path === '/stats') {
-        try {
-          const alertEngineId = env.ALERT_ENGINE.idFromName('main-alert-engine');
-          const alertEngine = env.ALERT_ENGINE.get(alertEngineId);
+			// System stats endpoint
+			if (path === '/stats') {
+				try {
+					const alertEngineId =
+						env.ALERT_ENGINE.idFromName('main-alert-engine');
+					const alertEngine = env.ALERT_ENGINE.get(alertEngineId);
 
-          const statsRequest = new Request('http://internal/stats', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-          });
+					const statsRequest = new Request('http://internal/stats', {
+						method: 'GET',
+						headers: { 'Content-Type': 'application/json' },
+					});
 
-          const statsResponse = await alertEngine.fetch(statsRequest);
-          const statsData = await statsResponse.json();
+					const statsResponse = await alertEngine.fetch(statsRequest);
+					const statsData = await statsResponse.json();
 
-          const performanceMetrics = await PerformanceOptimizer.getPerformanceMetrics(env);
+					const performanceMetrics =
+						await PerformanceOptimizer.getPerformanceMetrics(env);
 
-          return new ResponseBuilder()
-            .setData({
-              alert_engine: statsData,
-              performance: performanceMetrics,
-              api_version: '3.0'
-            })
-            .setHeaders(corsHeaders)
-            .build();
-        } catch (error) {
-          throw new Error('Failed to fetch system stats');
-        }
-      }
+					return new ResponseBuilder()
+						.setData({
+							alert_engine: statsData,
+							performance: performanceMetrics,
+							api_version: '3.0',
+						})
+						.setHeaders(corsHeaders)
+						.build();
+				} catch (error) {
+					throw new Error('Failed to fetch system stats');
+				}
+			}
 
-      // Crypto data endpoints
-      if (path.startsWith('/crypto')) {
-        const { handleCryptoRequest } = await import('./routes/crypto.js');
-        const response = await handleCryptoRequest(request, env, corsHeaders);
+			// Crypto data endpoints
+			if (path.startsWith('/crypto')) {
+				const { handleCryptoRequest } = await import('./routes/crypto.js');
+				const response = await handleCryptoRequest(request, env, corsHeaders);
 
-        // Update performance metrics
-        PerformanceOptimizer.updateMetrics(Date.now() - startTime, false, env);
+				// Update performance metrics
+				PerformanceOptimizer.updateMetrics(Date.now() - startTime, false, env);
 
-        return response;
-      }
+				return response;
+			}
 
-      // Alert management endpoints
-      if (path.startsWith('/api/alerts')) {
-        // Validate authentication for sensitive operations
-        const authResult = await SecurityMiddleware.validateApiKey(request, env);
-        if (!authResult.valid && request.method !== 'GET') {
-          throw new UnauthorizedError('API key required for this operation');
-        }
+			// Alert management endpoints
+			if (path.startsWith('/api/alerts')) {
+				// Validate authentication for sensitive operations
+				const authResult = await SecurityMiddleware.validateApiKey(
+					request,
+					env
+				);
+				if (!authResult.valid && request.method !== 'GET') {
+					return new Response(
+						JSON.stringify({
+							success: false,
+							error: 'API key required for this operation',
+							code: 'UNAUTHORIZED',
+						}),
+						{
+							status: 401,
+							headers: { 'Content-Type': 'application/json', ...corsHeaders },
+						}
+					);
+				}
 
-        const { handleAlertsRequest } = await import('./routes/alerts.js');
-        return await handleAlertsRequest(request, env, corsHeaders);
-      }
+				const { handleAlertsRequest } = await import('./routes/alerts.js');
+				return await handleAlertsRequest(request, env, corsHeaders);
+			}
 
-      // Portfolio management endpoints
-      if (path.startsWith('/api/portfolio')) {
-        const authResult = await SecurityMiddleware.validateApiKey(request, env);
-        if (!authResult.valid) {
-          throw new UnauthorizedError('API key required for portfolio access');
-        }
+			// Portfolio management endpoints
+			if (path.startsWith('/api/portfolio')) {
+				const { handlePortfolioRequest } = await import(
+					'./routes/portfolio.js'
+				);
+				return await handlePortfolioRequest(request, env, corsHeaders);
+			}
 
-        const { handlePortfolioRequest } = await import('./routes/portfolio.js');
-        return await handlePortfolioRequest(request, env, corsHeaders);
-      }
+			// WebSocket endpoint for alerts
+			if (path === '/alerts') {
+				if (request.headers.get('Upgrade') !== 'websocket') {
+					return new Response('Expected WebSocket upgrade', {
+						status: 426,
+						headers: corsHeaders,
+					});
+				}
 
-      // WebSocket endpoint for alerts
-      if (path === '/alerts') {
-        if (request.headers.get('Upgrade') !== 'websocket') {
-          return new Response('Expected WebSocket upgrade', {
-            status: 426,
-            headers: corsHeaders
-          });
-        }
+				const alertEngineId = env.ALERT_ENGINE.idFromName('main-alert-engine');
+				const alertEngine = env.ALERT_ENGINE.get(alertEngineId);
 
-        const alertEngineId = env.ALERT_ENGINE.idFromName('main-alert-engine');
-        const alertEngine = env.ALERT_ENGINE.get(alertEngineId);
+				return await alertEngine.fetch(request);
+			}
 
-        return await alertEngine.fetch(request);
-      }
+			// API documentation endpoint
+			if (path === '/docs' || path === '/') {
+				return new Response(getApiDocumentation(), {
+					headers: {
+						'Content-Type': 'text/html',
+						...corsHeaders,
+					},
+				});
+			}
 
-      // API documentation endpoint
-      if (path === '/docs' || path === '/') {
-        return new Response(getApiDocumentation(), {
-          headers: {
-            'Content-Type': 'text/html',
-            ...corsHeaders
-          }
-        });
-      }
-
-      // 404 for unknown endpoints
-      return new ResponseBuilder()
-        .setSuccess(false)
-        .setMessage('Endpoint not found')
-        .setMetadata({
-          available_endpoints: [
-            '/health', '/stats', '/crypto/{symbol}', '/alerts',
-            '/api/alerts', '/api/portfolio', '/docs'
-          ]
-        })
-        .setHeaders(corsHeaders)
-        .build(404);
-
-    } catch (error) {
-      return await ErrorHandler.handleError(error, request, env);
-    }
-  }
+			// FIXED: 404 for unknown endpoints with proper format
+			return new Response(
+				JSON.stringify({
+					success: false,
+					error: 'Endpoint not found',
+					code: 'NOT_FOUND',
+					message: `The requested endpoint '${path}' was not found`,
+					available_endpoints: [
+						'/health',
+						'/stats',
+						'/crypto/{symbol}',
+						'/alerts',
+						'/api/alerts',
+						'/api/portfolio',
+						'/docs',
+					],
+					timestamp: new Date().toISOString(),
+				}),
+				{
+					status: 404,
+					headers: { 'Content-Type': 'application/json', ...corsHeaders },
+				}
+			);
+		} catch (error) {
+			return await ErrorHandler.handleError(error, request, env);
+		}
+	},
 };
 
 async function getSystemHealth(env) {
-  try {
-    // Test database connection
-    const cacheTest = await env.CRYPTO_CACHE.get('health_check');
+	try {
+		// Test database connection
+		const cacheTest = await env.CRYPTO_CACHE.get('health_check');
 
-    // Test external API
-    let apiHealthy = false;
-    try {
-      const testResponse = await fetch('https://lunarcrush.com/api4/public/meta', {
-        timeout: 5000
-      });
-      apiHealthy = testResponse.ok;
-    } catch (error) {
-      apiHealthy = false;
-    }
+		// Test external API
+		let apiHealthy = false;
+		try {
+			const testResponse = await fetch(
+				'https://lunarcrush.com/api4/public/meta',
+				{
+					timeout: 5000,
+				}
+			);
+			apiHealthy = testResponse.ok;
+		} catch (error) {
+			apiHealthy = false;
+		}
 
-    return {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      services: {
-        database: cacheTest !== null ? 'healthy' : 'healthy', // KV is always available
-        external_api: apiHealthy ? 'healthy' : 'degraded',
-        websockets: 'healthy',
-        alert_engine: 'healthy'
-      },
-      version: '3.0'
-    };
-  } catch (error) {
-    return {
-      status: 'degraded',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    };
-  }
+		return {
+			status: 'healthy',
+			timestamp: new Date().toISOString(),
+			services: {
+				database: 'healthy',
+				external_api: apiHealthy ? 'healthy' : 'degraded',
+				websockets: 'healthy',
+				alert_engine: 'healthy',
+			},
+			version: '3.0',
+		};
+	} catch (error) {
+		return {
+			status: 'degraded',
+			error: error.message,
+			timestamp: new Date().toISOString(),
+		};
+	}
 }
 
 function getApiDocumentation() {
-  return `
+	return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -236,13 +267,13 @@ function getApiDocumentation() {
 
     <h2>📈 Portfolio Management</h2>
     <div class="endpoint">
-        <span class="method">GET</span> <code>/api/portfolio</code> - Get portfolio summary
+        <span class="method">GET</span> <code>/api/portfolio</code> - Get portfolio summary (requires auth)
     </div>
     <div class="endpoint">
-        <span class="method post">POST</span> <code>/api/portfolio/holdings</code> - Add holding
+        <span class="method post">POST</span> <code>/api/portfolio/holdings</code> - Add holding (requires auth)
     </div>
     <div class="endpoint">
-        <span class="method">GET</span> <code>/api/portfolio/performance</code> - Portfolio performance
+        <span class="method">GET</span> <code>/api/portfolio/performance</code> - Portfolio performance (requires auth)
     </div>
 
     <h2>🔌 Real-time Connection</h2>
@@ -251,7 +282,7 @@ function getApiDocumentation() {
     </div>
 
     <h2>🔐 Authentication</h2>
-    <p>Include API key in headers:</p>
+    <p>Include API key in headers for portfolio endpoints:</p>
     <code>Authorization: Bearer YOUR_API_KEY</code><br>
     <code>X-API-Key: YOUR_API_KEY</code>
 
@@ -259,12 +290,15 @@ function getApiDocumentation() {
     <pre>{
   "success": true,
   "data": {...},
-  "message": "Optional message",
   "metadata": {
     "timestamp": "2025-01-21T...",
-    "cache_hit": true
+    "cached": false,
+    "source": "LunarCrush API v4"
   }
 }</pre>
+
+    <h2>💡 Fallback System</h2>
+    <p>When external APIs are unavailable, the system provides realistic fallback data to ensure continuous operation.</p>
 </body>
 </html>
   `;

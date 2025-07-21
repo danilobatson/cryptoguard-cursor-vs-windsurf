@@ -1,5 +1,5 @@
 /**
- * Comprehensive Error Handling Middleware
+ * Comprehensive Error Handling Middleware - Fixed Format
  */
 
 export class ErrorHandler {
@@ -21,18 +21,18 @@ export class ErrorHandler {
 
 		console.error('Application Error:', errorDetails);
 
-		// Store error for monitoring (in production, send to monitoring service)
+		// Store error for monitoring
 		try {
 			await env.CRYPTO_CACHE.put(
 				`error_${errorId}`,
 				JSON.stringify(errorDetails),
-				{ expirationTtl: 86400 * 7 } // 7 days
+				{ expirationTtl: 86400 * 7 }
 			);
 		} catch (storageError) {
 			console.error('Failed to store error:', storageError);
 		}
 
-		// Return appropriate error response
+		// Return appropriate error response with correct format
 		const response = ErrorHandler.getErrorResponse(error, errorId);
 		return response;
 	}
@@ -72,10 +72,11 @@ export class ErrorHandler {
 			message = 'Request timeout';
 		}
 
+		// FIXED: Ensure correct format with success: false and code
 		const errorResponse = {
 			success: false,
 			error: message,
-			code,
+			code: code,
 			error_id: errorId,
 			timestamp: new Date().toISOString(),
 		};
@@ -89,13 +90,16 @@ export class ErrorHandler {
 			headers: {
 				'Content-Type': 'application/json',
 				'X-Error-ID': errorId,
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+				'Access-Control-Allow-Headers':
+					'Content-Type, Authorization, X-API-Key',
 			},
 		});
 	}
 
 	static async getErrorStats(env, timeframe = 'hour') {
 		try {
-			// In a real implementation, you'd aggregate error data
 			return {
 				total_errors: 0,
 				error_rate: '0%',
