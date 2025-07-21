@@ -1,22 +1,64 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   AppShell, 
   Group, 
   Text, 
   Button,
   Container,
-  Card,
-  Stack,
   Title,
   Badge,
-  Loader,
-  Alert,
-  Box
+  Box,
+  Tooltip,
+  ActionIcon
 } from '@mantine/core'
-import { IconCoin, IconTrendingUp, IconBell, IconDashboard } from '@tabler/icons-react'
-import ApiTest from './components/ApiTest'
+import { 
+  IconCoin, 
+  IconBell, 
+  IconSettings,
+  IconBrandGithub,
+  IconExternalLink
+} from '@tabler/icons-react'
+import DashboardGrid from './components/dashboard/DashboardGrid'
+import useCryptoStore from './stores/useCryptoStore'
+import useNotifications from './hooks/useNotifications'
 
 function App() {
+  const { notifications, addNotification } = useCryptoStore()
+  
+  // Initialize notification system
+  useNotifications()
+
+  // Welcome notification on first load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      addNotification({
+        type: 'success',
+        title: '🚀 CryptoGuard Active!',
+        message: 'Live crypto data dashboard with professional state management'
+      })
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [addNotification])
+
+  const handleSetupAlerts = () => {
+    addNotification({
+      type: 'info',
+      title: 'Alert System Coming Soon',
+      message: 'Advanced price & sentiment alerts will be available in the next update!'
+    })
+  }
+
+  const handleViewGitHub = () => {
+    addNotification({
+      type: 'info',
+      title: 'Source Code',
+      message: 'GitHub repository will be available after the Cursor vs Windsurf IDE battle!'
+    })
+  }
+
+  const unreadNotifications = notifications.filter(n => !n.read).length
+
   return (
     <AppShell
       header={{ height: 80 }}
@@ -42,20 +84,86 @@ function App() {
             </Group>
             
             <Group gap="md">
+              {/* Live Status */}
               <Badge 
                 color="green" 
                 variant="light" 
                 size="lg"
                 className="crypto-pulse"
+                leftSection="🟢"
               >
-                🟢 LIVE DATA
+                PRODUCTION READY
               </Badge>
+
+              {/* Notifications */}
+              <Tooltip label={`${unreadNotifications} unread notifications`}>
+                <ActionIcon
+                  variant="light"
+                  color="blue"
+                  size="lg"
+                  style={{ position: 'relative' }}
+                  onClick={() => addNotification({
+                    type: 'info',
+                    title: 'Notification Center',
+                    message: 'Advanced notification management coming soon!'
+                  })}
+                >
+                  <IconBell size={18} />
+                  {unreadNotifications > 0 && (
+                    <Badge
+                      size="xs"
+                      color="red"
+                      style={{
+                        position: 'absolute',
+                        top: -5,
+                        right: -5,
+                        minWidth: 16,
+                        height: 16,
+                        padding: 0
+                      }}
+                    >
+                      {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                    </Badge>
+                  )}
+                </ActionIcon>
+              </Tooltip>
+
+              {/* Settings */}
+              <Tooltip label="Dashboard settings">
+                <ActionIcon 
+                  variant="light" 
+                  color="gray" 
+                  size="lg"
+                  onClick={() => addNotification({
+                    type: 'info',
+                    title: 'Settings Panel',
+                    message: 'Dashboard customization options coming soon!'
+                  })}
+                >
+                  <IconSettings size={18} />
+                </ActionIcon>
+              </Tooltip>
+
+              {/* GitHub Link */}
+              <Tooltip label="View source code">
+                <ActionIcon
+                  variant="light"
+                  color="gray"
+                  size="lg"
+                  onClick={handleViewGitHub}
+                >
+                  <IconBrandGithub size={18} />
+                </ActionIcon>
+              </Tooltip>
+
+              {/* Main CTA */}
               <Button 
                 leftSection={<IconBell size={18} />}
                 variant="gradient"
                 gradient={{ from: 'bitcoin', to: 'ethereum', deg: 45 }}
                 size="md"
                 fw={600}
+                onClick={handleSetupAlerts}
               >
                 Setup Alerts
               </Button>
@@ -66,69 +174,7 @@ function App() {
 
       <AppShell.Main>
         <Container size="xl">
-          <Stack gap="xl">
-            {/* Main Dashboard Card */}
-            <Card 
-              shadow="lg" 
-              padding="xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.3)'
-              }}
-            >
-              <Stack gap="lg">
-                <Group justify="space-between" align="flex-start">
-                  <Box>
-                    <Title order={2} style={{ color: '#FFFFFF' }} mb="sm">
-                      <IconDashboard size={28} style={{ marginRight: 12 }} />
-                      Live Market Dashboard
-                    </Title>
-                    <Text style={{ color: '#C1C2C5' }} size="lg" fw={500}>
-                      Connected to your production Cloudflare Workers API with live LunarCrush data
-                    </Text>
-                  </Box>
-                  <Badge 
-                    color="bitcoin" 
-                    variant="gradient" 
-                    gradient={{ from: 'bitcoin', to: 'ethereum', deg: 45 }}
-                    size="xl"
-                    fw={600}
-                  >
-                    REAL-TIME
-                  </Badge>
-                </Group>
-                
-                <ApiTest />
-              </Stack>
-            </Card>
-
-            {/* Status Alert */}
-            <Alert 
-              color="green" 
-              title="🚀 Backend Status: Production Ready"
-              icon={<IconTrendingUp />}
-              style={{
-                background: 'rgba(76, 175, 80, 0.15)',
-                border: '1px solid rgba(76, 175, 80, 0.4)'
-              }}
-            >
-              <Stack gap="xs">
-                <Text size="md" fw={600} style={{ color: '#FFFFFF' }}>
-                  ✅ Cloudflare Workers API: 94% verification score
-                </Text>
-                <Text size="md" fw={500} style={{ color: '#E9E9E9' }}>
-                  ✅ Live Data Sources: Bitcoin $116,960+ | Ethereum $3,741+
-                </Text>
-                <Text size="md" fw={500} style={{ color: '#C1C2C5' }}>
-                  ✅ WebSocket Connections: Active and operational
-                </Text>
-                <Text size="md" fw={600} c="green">
-                  ✅ Frontend Foundation: Ready for IDE battle!
-                </Text>
-              </Stack>
-            </Alert>
-          </Stack>
+          <DashboardGrid />
         </Container>
       </AppShell.Main>
     </AppShell>
