@@ -33,7 +33,6 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
 
   // Process chart data
   const chartData = useMemo(() => formatChartData(data, symbol), [data, symbol])
-  const sentimentData = useMemo(() => generateSentimentData(), [])
   const chartConfig = getChartConfig(symbol)
   const priceMetrics = calculatePriceMetrics(chartData)
 
@@ -41,9 +40,8 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
   useEffect(() => {
     if (isRealTime) {
       const interval = setInterval(() => {
-        // In a real app, this would fetch new data points
         console.log(`Updating ${symbol} chart data...`)
-      }, 60000) // Update every minute
+      }, 60000)
 
       return () => clearInterval(interval)
     }
@@ -79,6 +77,7 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
   const renderChart = () => {
     const commonProps = {
       h: isFullscreen ? 400 : 260,
+      w: '100%',
       data: chartData,
       dataKey: 'time',
       withLegend: true,
@@ -147,7 +146,7 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
   if (!chartData || chartData.length === 0) {
     return (
       <Card withBorder>
-        <Stack align="center" gap="md" style={{ minHeight: 200 }}>
+        <Stack align="center" gap="md" style={{ minHeight: 260 }}>
           <IconChartLine size={48} color="var(--mantine-color-dimmed)" />
           <Text c="dimmed">No chart data available</Text>
         </Stack>
@@ -160,52 +159,29 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
       withBorder
       className={isRealTime ? "crypto-pulse" : ""}
       style={{ 
-        background: `linear-gradient(135deg, rgba(${chartConfig.color.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ')}, 0.05) 0%, transparent 100%)`,
-        border: `1px solid rgba(${chartConfig.color.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ')}, 0.2)`
+        background: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.1)'
       }}
     >
       <Stack gap="md">
         {/* Chart Header */}
-        <Group justify="space-between" align="flex-start">
+        <Group justify="space-between" align="center">
           <Box>
-            <Group gap="sm" align="center">
+            <Group gap="sm">
               <Text size="lg" fw={700} c="white">
-                {chartConfig.name} Price Chart
+                {symbol.charAt(0).toUpperCase() + symbol.slice(1)} Chart
               </Text>
-              <Badge color={chartConfig.color.replace('#', '').toLowerCase()} variant="light">
-                {timeframe.toUpperCase()}
-              </Badge>
-            </Group>
-            
-            {priceMetrics && (
-              <Group gap="xs" mt={4}>
-                <Text size="sm" c="white">
-                  Range: 
-                </Text>
-                <Text size="sm" c="dimmed">
-                  <NumberFormatter 
-                    value={priceMetrics.low24h} 
-                    prefix="$" 
-                    thousandSeparator 
-                    decimalScale={2}
-                  /> - <NumberFormatter 
-                    value={priceMetrics.high24h} 
-                    prefix="$" 
-                    thousandSeparator 
-                    decimalScale={2}
-                  />
-                </Text>
+              {priceMetrics && (
                 <Badge 
-                  color={getPriceChangeColor()}
+                  color={getPriceChangeColor()} 
+                  variant="light" 
                   leftSection={getPriceChangeIcon()}
-                  variant="light"
-                  size="sm"
                 >
                   {priceMetrics.changePercent > 0 ? '+' : ''}
                   {priceMetrics.changePercent.toFixed(2)}%
                 </Badge>
-              </Group>
-            )}
+              )}
+            </Group>
           </Box>
 
           {/* Chart Controls */}
@@ -279,7 +255,11 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
         </Group>
 
         {/* Chart Display */}
-        <Box>
+        <Box style={{ 
+    minHeight: isFullscreen ? 400 : 260, 
+    width: '100%', 
+    height: isFullscreen ? 400 : 260 
+  }}>
           {renderChart()}
         </Box>
 
@@ -319,13 +299,13 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
             </Text>
           </Box>
           <Box ta="center">
-            <Text size="xs" c="dimmed">Volatility</Text>
+            <Text size="xs" c="dimmed">Volume</Text>
             <Text fw={600} c="blue" size="sm">
               <NumberFormatter 
-                value={priceMetrics?.range24h || 0} 
+                value={priceMetrics?.volume24h || 0} 
                 prefix="$" 
                 thousandSeparator 
-                decimalScale={2}
+                decimalScale={0}
               />
             </Text>
           </Box>

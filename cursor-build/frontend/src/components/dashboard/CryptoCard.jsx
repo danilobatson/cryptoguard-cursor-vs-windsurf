@@ -24,6 +24,7 @@ import {
 } from '@tabler/icons-react'
 import { useState } from 'react'
 import useCryptoStore from '../../stores/useCryptoStore'
+import { CryptoCardSkeleton } from '../ui/Skeleton'
 
 const CryptoCard = ({ 
   symbol, 
@@ -37,24 +38,9 @@ const CryptoCard = ({
   const [isFavorite, setIsFavorite] = useState(false)
   const { addNotification } = useCryptoStore()
 
+  // Sophisticated skeleton loading state
   if (isLoading || !data) {
-    return (
-      <Card withBorder className="crypto-pulse" style={{ minHeight: 200 }}>
-        <Stack align="center" justify="center" gap="md" style={{ minHeight: 180 }}>
-          <Box 
-            style={{ 
-              width: 60, 
-              height: 60, 
-              borderRadius: '50%', 
-              background: 'linear-gradient(45deg, #FFC107, #4CAF50)',
-              opacity: 0.3 
-            }} 
-          />
-          <Text size="sm" c="dimmed">Loading {symbol}...</Text>
-          <Progress value={50} size="xs" radius="xl" striped animated style={{ width: '80%' }} />
-        </Stack>
-      </Card>
-    )
+    return <CryptoCardSkeleton variant={variant} />
   }
 
   // Calculate price metrics
@@ -69,7 +55,7 @@ const CryptoCard = ({
   const isPositive = change24h > 0
   const isNegative = change24h < 0
   const changeColor = isPositive ? 'green' : isNegative ? 'red' : 'gray'
-  const changeIcon = isPositive ? IconTrendingUp : isNegative ? IconTrendingDown : IconMinus
+  const ChangeIcon = isPositive ? IconTrendingUp : isNegative ? IconTrendingDown : IconMinus
 
   // Symbol-specific styling
   const symbolColors = {
@@ -173,7 +159,7 @@ const CryptoCard = ({
           <Group gap="xs" mt="xs">
             <Badge 
               color={changeColor}
-              leftSection={<changeIcon size={14} />}
+              leftSection={<ChangeIcon size={14} />}
               variant="light"
               size="md"
             >

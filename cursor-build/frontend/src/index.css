@@ -1,173 +1,38 @@
-/* Enhanced global styles with perfect text contrast */
-:root {
-  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.6;
-  font-weight: 400;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  /* Darker, more contrasted background */
-  background: 
-    radial-gradient(ellipse at top, rgba(255, 193, 7, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at bottom right, rgba(76, 175, 80, 0.08) 0%, transparent 60%),
-    linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #0a0a0a 100%);
-  background-attachment: fixed;
-}
-
-/* Force better text contrast globally */
-[data-mantine-color-scheme="dark"] {
-  --mantine-color-text: #FFFFFF !important;
-  --mantine-color-dimmed: #C1C2C5 !important;  /* Much lighter dimmed text */
-  --mantine-color-body: transparent;
-  --mantine-color-default: #FFFFFF;
-  --mantine-color-default-hover: #E9E9E9;
-}
-
-/* Override dimmed text to be more visible */
-[data-mantine-color-scheme="dark"] .mantine-Text-root[data-variant="dimmed"],
-[data-mantine-color-scheme="dark"] [style*="color: var(--mantine-color-dimmed)"] {
-  color: #C1C2C5 !important;
-}
-
-/* Better alert text */
-.mantine-Alert-root {
-  color: #FFFFFF !important;
-}
-
-.mantine-Alert-root .mantine-Text-root {
-  color: #FFFFFF !important;
-}
-
-/* Better card text */
-.mantine-Card-root .mantine-Text-root {
-  color: #FFFFFF !important;
-}
-
-.mantine-Card-root .mantine-Text-root[data-variant="dimmed"] {
-  color: #C1C2C5 !important;
-}
-
-/* Enhanced scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(45deg, #FFC107, #4CAF50);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(45deg, #FFD54F, #66BB6A);
-}
-
-/* Enhanced crypto animations */
-@keyframes pulse {
-  0% { 
-    opacity: 1; 
-    transform: scale(1);
+/* Fixed global animations that don't interfere with main UI */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
   }
-  50% { 
-    opacity: 0.9; 
-    transform: scale(1.01);
-  }
-  100% { 
-    opacity: 1; 
-    transform: scale(1);
+  100% {
+    transform: translateX(100%);
   }
 }
 
-@keyframes glow {
-  0% { box-shadow: 0 0 10px rgba(255, 193, 7, 0.3); }
-  50% { box-shadow: 0 0 25px rgba(255, 193, 7, 0.6), 0 0 35px rgba(76, 175, 80, 0.3); }
-  100% { box-shadow: 0 0 10px rgba(255, 193, 7, 0.3); }
-}
-
-.crypto-pulse {
-  animation: pulse 3s infinite ease-in-out;
-}
-
-.crypto-glow {
-  animation: glow 2.5s infinite ease-in-out;
-}
-
-/* Text selection */
-::selection {
-  background: rgba(255, 193, 7, 0.3);
-  color: #FFFFFF;
-}
-
-/* Focus styles */
-button:focus-visible,
-input:focus-visible {
-  outline: 2px solid #FFC107;
-  outline-offset: 2px;
-}
-
-/* Chart-specific enhancements */
-.mantine-LineChart-root,
-.mantine-AreaChart-root,
-.mantine-BarChart-root {
-  background: transparent !important;
-}
-
-.mantine-LineChart-tooltip,
-.mantine-AreaChart-tooltip,
-.mantine-BarChart-tooltip {
-  background: rgba(0, 0, 0, 0.9) !important;
-  border: 1px solid rgba(255, 193, 7, 0.3) !important;
-  color: #FFFFFF !important;
-  border-radius: 8px !important;
-  backdrop-filter: blur(10px) !important;
-}
-
-/* Chart legend styling */
-.recharts-legend-item-text {
-  color: #FFFFFF !important;
-}
-
-/* Chart grid lines */
-.recharts-cartesian-grid-horizontal line,
-.recharts-cartesian-grid-vertical line {
-  stroke: rgba(255, 255, 255, 0.1) !important;
-}
-
-/* Chart axis labels */
-.recharts-xAxis .recharts-text,
-.recharts-yAxis .recharts-text {
-  fill: #C1C2C5 !important;
-  font-size: 12px !important;
-}
-
-/* Chart animations */
-@keyframes chartGlow {
-  0% { 
-    filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.3));
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
   }
-  50% { 
-    filter: drop-shadow(0 0 15px rgba(255, 193, 7, 0.6));
-  }
-  100% { 
-    filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.3));
+  50% {
+    opacity: 0.8;
   }
 }
 
-.chart-glow {
-  animation: chartGlow 3s infinite ease-in-out;
+/* Only apply transitions to specific skeleton elements, not everything */
+.skeleton-loading {
+  animation: skeleton-pulse 2s ease-in-out infinite;
 }
 
-/* Responsive chart adjustments */
-@media (max-width: 768px) {
-  .mantine-LineChart-root,
-  .mantine-AreaChart-root,
-  .mantine-BarChart-root {
-    height: 200px !important;
-  }
+.shimmer-effect {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Remove the global transition that was affecting everything */
+/* * {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+} */
+
+/* Better loading states without affecting main UI */
+.crypto-card-loading {
+  opacity: 0.8;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
