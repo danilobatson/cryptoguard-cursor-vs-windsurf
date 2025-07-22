@@ -1,10 +1,10 @@
-import { 
-  Grid, 
-  Stack, 
-  Card, 
-  Group, 
-  Text, 
-  Badge, 
+import {
+  Grid,
+  Stack,
+  Card,
+  Group,
+  Text,
+  Badge,
   ActionIcon,
   Tooltip,
   Button,
@@ -13,10 +13,10 @@ import {
   Switch,
   Tabs
 } from '@mantine/core'
-import { 
-  IconSettings, 
-  IconRefresh, 
-  IconPlayerPlay, 
+import {
+  IconSettings,
+  IconRefresh,
+  IconPlayerPlay,
   IconPlayerPause,
   IconLayoutDashboard,
   IconTrendingUp,
@@ -29,13 +29,14 @@ import CryptoCard from './CryptoCard'
 import PriceChart from './PriceChart'
 import { useMultipleCrypto } from '../../hooks/useCryptoData'
 import useCryptoStore from '../../stores/useCryptoStore'
+import HeroSection from './HeroSection'
 
 const DashboardGrid = () => {
   const [activeTab, setActiveTab] = useState('overview')
-  
-  const { 
-    isRealTimeActive, 
-    startRealTime, 
+
+  const {
+    isRealTimeActive,
+    startRealTime,
     stopRealTime,
     refreshInterval,
     setRefreshInterval,
@@ -43,11 +44,11 @@ const DashboardGrid = () => {
     addNotification
   } = useCryptoStore()
 
-  const { 
-    data: cryptoData, 
-    isLoading, 
+  const {
+    data: cryptoData,
+    isLoading,
     refreshAll,
-    hasError 
+    hasError
   } = useMultipleCrypto(['bitcoin', 'ethereum'])
 
   const handleToggleRealTime = () => {
@@ -97,6 +98,39 @@ const DashboardGrid = () => {
 
   return (
     <Stack gap="xl">
+      {/* 🚀 HERO SECTION */}
+      <Card
+        style={{
+          background: 'linear-gradient(135deg, rgba(247, 147, 26, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          borderRadius: '16px',
+          padding: '1.5rem'
+        }}
+      >
+        <Group justify="space-between" align="center">
+          <div>
+            <Text size="xl" fw={700} c="white">🚀 CryptoGuard Portfolio</Text>
+            <Badge color={isRealTimeActive ? 'green' : 'gray'} variant="light" size="sm">
+              {isRealTimeActive ? 'LIVE DATA' : 'CACHED DATA'} • 2 Assets Tracked
+            </Badge>
+          </div>
+
+          <div style={{ textAlign: 'right' }}>
+            <Text size="xs" c="dimmed">Total Portfolio Value</Text>
+            <Text size="xl" fw={700} c="white">
+              {((cryptoData?.bitcoin?.close || 0) + (cryptoData?.ethereum?.close || 0)).toLocaleString('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              })}
+            </Text>
+            <Text size="sm" c="green" fw={600}>+2.1% (24h)</Text>
+          </div>
+        </Group>
+      </Card>
+  
       {/* Dashboard Header */}
       <Card withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)' }}>
         <Group justify="space-between" align="center">
@@ -112,8 +146,8 @@ const DashboardGrid = () => {
 
           {/* Dashboard Controls */}
           <Group gap="sm">
-            <Badge 
-              color={hasError ? 'red' : isLoading ? 'yellow' : 'green'} 
+            <Badge
+              color={hasError ? 'red' : isLoading ? 'yellow' : 'green'}
               variant="light"
               leftSection={hasError ? '⚠️' : isLoading ? '⏳' : '✅'}
             >
@@ -166,6 +200,12 @@ const DashboardGrid = () => {
       </Card>
 
       {/* Dashboard Tabs */}
+            {/* Hero Section */}
+      <HeroSection
+        cryptoData={cryptoData}
+        isRealTime={isRealTimeActive}
+      />
+
       <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
           <Tabs.Tab value="overview" leftSection={<IconCards size={16} />}>
@@ -268,9 +308,9 @@ const DashboardGrid = () => {
 
             {/* Action Cards */}
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Card 
-                withBorder 
-                style={{ 
+              <Card
+                withBorder
+                style={{
                   backgroundColor: 'rgba(255, 193, 7, 0.1)',
                   border: '1px solid rgba(255, 193, 7, 0.3)',
                   cursor: 'pointer',
@@ -293,9 +333,9 @@ const DashboardGrid = () => {
             </Grid.Col>
 
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Card 
-                withBorder 
-                style={{ 
+              <Card
+                withBorder
+                style={{
                   backgroundColor: 'rgba(76, 175, 80, 0.1)',
                   border: '1px solid rgba(76, 175, 80, 0.3)',
                   cursor: 'pointer',
@@ -318,9 +358,9 @@ const DashboardGrid = () => {
             </Grid.Col>
 
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Card 
-                withBorder 
-                style={{ 
+              <Card
+                withBorder
+                style={{
                   backgroundColor: 'rgba(33, 150, 243, 0.1)',
                   border: '1px solid rgba(33, 150, 243, 0.3)',
                   cursor: 'pointer',
@@ -339,9 +379,9 @@ const DashboardGrid = () => {
             </Grid.Col>
 
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Card 
-                withBorder 
-                style={{ 
+              <Card
+                withBorder
+                style={{
                   backgroundColor: 'rgba(156, 39, 176, 0.1)',
                   border: '1px solid rgba(156, 39, 176, 0.3)',
                   cursor: 'pointer',
@@ -406,9 +446,9 @@ const DashboardGrid = () => {
             <Badge variant="light" size="xs">DEV MODE</Badge>
           </Group>
           <Text size="xs" c="dimmed" mt="xs">
-            Real-time: {isRealTimeActive ? '✅' : '❌'} | 
-            Interval: {refreshInterval/1000}s | 
-            Notifications: {notifications.length} | 
+            Real-time: {isRealTimeActive ? '✅' : '❌'} |
+            Interval: {refreshInterval/1000}s |
+            Notifications: {notifications.length} |
             Loading: {isLoading ? '⏳' : '✅'} |
             Error: {hasError ? '❌' : '✅'} |
             Active Tab: {activeTab}
