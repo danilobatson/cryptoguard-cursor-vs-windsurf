@@ -26,7 +26,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import useCryptoStore from '../../stores/useCryptoStore'
 
 const PriceChart = ({ symbol, data, isRealTime = false }) => {
-  const [chartType, setChartType] = useState('area')
+  const [chartType, setChartType] = useState('line')
   const [timeframe, setTimeframe] = useState('24h')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [priceHistory, setPriceHistory] = useState([])
@@ -50,16 +50,16 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
   // Calculate realistic Y-axis domain based on current price
   const getYAxisDomain = () => {
     if (!priceMetrics) return ['auto', 'auto']
-    
+
     const currentPrice = priceMetrics.current
     const changePercent = Math.abs(priceMetrics.changePercent) || 2 // Default to 2% if no change data
-    
+
     // Use a minimum of 2% range, or expand based on actual 24h change
     const rangePercent = Math.max(changePercent * 1.5, 2) // At least 2%, or 1.5x the actual change
-    
+
     const minPrice = currentPrice * (1 - rangePercent / 100)
     const maxPrice = currentPrice * (1 + rangePercent / 100)
-    
+
     return [
       Math.floor(minPrice), // Round down for min
       Math.ceil(maxPrice)   // Round up for max
@@ -116,7 +116,7 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
       const timestamp = now - (i * 60 * 1000) // 1 minute intervals
       const variation = (Math.random() - 0.5) * 0.01 // ±0.5% variation (more realistic)
       const price = basePrice * (1 + variation)
-      
+
       initialHistory.push({
         time: timestamp,
         price: price,
@@ -154,7 +154,7 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
       const currentPrice = priceMetrics?.current || 0
       const priceChange = data.price - currentPrice
       const percentChange = currentPrice > 0 ? ((priceChange / currentPrice) * 100) : 0
-      
+
       return (
         <Card withBorder padding="xs" style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)' }}>
           <Text size="xs" c="dimmed">{data.formattedTime}</Text>
@@ -178,12 +178,12 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
     // Show loading state if chart not ready or no data
     if (!isChartReady || !priceHistory || priceHistory.length < 2) {
       return (
-        <div style={{ 
-          height: chartHeight, 
-          width: '100%', 
+        <div style={{
+          height: chartHeight,
+          width: '100%',
           minHeight: chartHeight,
-          display: 'flex', 
-          alignItems: 'center', 
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: 'rgba(255, 255, 255, 0.05)',
           borderRadius: '8px',
@@ -206,21 +206,21 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
     const areaColor = priceMetrics?.changePercent >= 0 ? '#40c057' : '#fa5252'
 
     return (
-      <div style={{ 
-        height: chartHeight, 
+      <div style={{
+        height: chartHeight,
         width: '100%',
         minHeight: chartHeight,
         minWidth: 300
       }}>
-        <ResponsiveContainer 
-          width="100%" 
+        <ResponsiveContainer
+          width="100%"
           height={chartHeight}
           minWidth={300}
           minHeight={chartHeight}
         >
           {chartType === 'area' ? (
-            <AreaChart 
-              data={priceHistory} 
+            <AreaChart
+              data={priceHistory}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               width={chartWidth}
               height={chartHeight}
@@ -232,54 +232,54 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-              <XAxis 
-                dataKey="formattedTime" 
+              <XAxis
+                dataKey="formattedTime"
                 stroke="rgba(255, 255, 255, 0.5)"
                 fontSize={12}
                 interval="preserveStartEnd"
               />
-              <YAxis 
+              <YAxis
                 stroke="rgba(255, 255, 255, 0.5)"
                 fontSize={12}
                 domain={yAxisDomain}
                 tickFormatter={(value) => `$${value.toLocaleString()}`}
               />
               <RechartsTooltip content={<CustomTooltip />} />
-              <Area 
-                type="monotone" 
-                dataKey="price" 
+              <Area
+                type="monotone"
+                dataKey="price"
                 stroke={areaColor}
                 strokeWidth={2}
-                fillOpacity={1} 
+                fillOpacity={1}
                 fill={`url(#colorPrice-${symbol})`}
                 dot={false}
                 activeDot={{ r: 4, stroke: areaColor, strokeWidth: 2, fill: '#fff' }}
               />
             </AreaChart>
           ) : (
-            <LineChart 
-              data={priceHistory} 
+            <LineChart
+              data={priceHistory}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               width={chartWidth}
               height={chartHeight}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-              <XAxis 
-                dataKey="formattedTime" 
+              <XAxis
+                dataKey="formattedTime"
                 stroke="rgba(255, 255, 255, 0.5)"
                 fontSize={12}
                 interval="preserveStartEnd"
               />
-              <YAxis 
+              <YAxis
                 stroke="rgba(255, 255, 255, 0.5)"
                 fontSize={12}
                 domain={yAxisDomain}
                 tickFormatter={(value) => `$${value.toLocaleString()}`}
               />
               <RechartsTooltip content={<CustomTooltip />} />
-              <Line 
-                type="monotone" 
-                dataKey="price" 
+              <Line
+                type="monotone"
+                dataKey="price"
                 stroke={lineColor}
                 strokeWidth={2}
                 dot={false}
@@ -295,7 +295,7 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
   const getPriceChangeIcon = () => {
     if (!priceMetrics) return <IconMinus size={16} />
     const { changePercent } = priceMetrics
-    return changePercent > 0 ? <IconTrendingUp size={16} /> : 
+    return changePercent > 0 ? <IconTrendingUp size={16} /> :
            changePercent < 0 ? <IconTrendingDown size={16} /> : <IconMinus size={16} />
   }
 
@@ -320,10 +320,10 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
   const priceRange = yAxisDomain[1] - yAxisDomain[0]
 
   return (
-    <Card 
+    <Card
       withBorder
       className={isRealTime ? "pulse-live" : ""}
-      style={{ 
+      style={{
         backgroundColor: 'rgba(255, 255, 255, 0.05)',
         border: isRealTime ? '1px solid rgba(64, 192, 87, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
       }}
@@ -337,9 +337,9 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
                 {symbol.charAt(0).toUpperCase() + symbol.slice(1)}
               </Text>
               {priceMetrics && (
-                <Badge 
-                  color={getPriceChangeColor()} 
-                  variant="light" 
+                <Badge
+                  color={getPriceChangeColor()}
+                  variant="light"
                   leftSection={getPriceChangeIcon()}
                 >
                   {priceMetrics.changePercent > 0 ? '+' : ''}
@@ -369,17 +369,17 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
               ]}
               style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
             />
-            
+
             <Tooltip label="Refresh chart data">
               <ActionIcon variant="light" color="blue" size="sm" onClick={handleRefresh}>
                 <IconRefresh size={16} />
               </ActionIcon>
             </Tooltip>
-            
+
             <Tooltip label={isFullscreen ? 'Minimize' : 'Fullscreen'}>
-              <ActionIcon 
-                variant="light" 
-                color="gray" 
+              <ActionIcon
+                variant="light"
+                color="gray"
                 size="sm"
                 onClick={toggleFullscreen}
               >
@@ -399,10 +399,10 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
           <Box ta="center">
             <Text size="xs" c="dimmed">Current</Text>
             <Text fw={600} c="white" size="sm">
-              <NumberFormatter 
-                value={priceMetrics?.current || 0} 
-                prefix="$" 
-                thousandSeparator 
+              <NumberFormatter
+                value={priceMetrics?.current || 0}
+                prefix="$"
+                thousandSeparator
                 decimalScale={2}
               />
             </Text>
@@ -410,10 +410,10 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
           <Box ta="center">
             <Text size="xs" c="dimmed">Chart Range</Text>
             <Text fw={600} c="blue" size="sm">
-              <NumberFormatter 
-                value={priceRange || 0} 
-                prefix="$" 
-                thousandSeparator 
+              <NumberFormatter
+                value={priceRange || 0}
+                prefix="$"
+                thousandSeparator
                 decimalScale={0}
               />
             </Text>
