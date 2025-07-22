@@ -14,7 +14,10 @@ import {
   Switch,
   Textarea,
   Box,
-  Divider
+  Divider,
+  Grid,
+  Tabs,
+  Tooltip
 } from '@mantine/core'
 import {
   IconBell,
@@ -24,46 +27,213 @@ import {
   IconVolume,
   IconInfoCircle,
   IconX,
-  IconCheck
+  IconCheck,
+  IconChartLine,
+  IconBolt,
+  IconTarget,
+  IconTrendingUpDown,
+  IconMoodSmile,
+  IconUsers,
+  IconActivity
 } from '@tabler/icons-react'
 import { useForm } from '@mantine/form'
-import useAlertStore, { ALERT_TYPES } from '../../stores/useAlertStore'
+import useAlertStore, { ALERT_TYPES, ALERT_CONFIGS } from '../../stores/useAlertStore'
 import useCryptoStore from '../../stores/useCryptoStore'
 
-// Alert type configurations
+// Enhanced alert type configurations with icons and categories
 const ALERT_TYPE_CONFIGS = {
+  // Basic Price Alerts
   [ALERT_TYPES.PRICE_ABOVE]: {
     icon: IconTrendingUp,
     label: 'Price Above',
     description: 'Alert when price rises above target',
     color: 'green',
+    category: 'Price',
+    difficulty: 'Basic',
     unit: '$',
-    placeholder: 'Enter target price'
+    placeholder: 'Enter target price',
+    fields: [
+      { name: 'targetValue', label: 'Target Price', type: 'number', required: true }
+    ]
   },
   [ALERT_TYPES.PRICE_BELOW]: {
     icon: IconTrendingDown,
     label: 'Price Below',
     description: 'Alert when price drops below target',
     color: 'red',
+    category: 'Price',
+    difficulty: 'Basic',
     unit: '$',
-    placeholder: 'Enter target price'
+    placeholder: 'Enter target price',
+    fields: [
+      { name: 'targetValue', label: 'Target Price', type: 'number', required: true }
+    ]
   },
   [ALERT_TYPES.PERCENT_CHANGE]: {
     icon: IconPercentage,
     label: 'Percent Change',
     description: 'Alert on 24h percentage change',
     color: 'blue',
+    category: 'Price',
+    difficulty: 'Basic',
     unit: '%',
-    placeholder: 'Enter percentage threshold'
+    placeholder: 'Enter percentage threshold',
+    fields: [
+      { name: 'targetValue', label: 'Change Threshold (%)', type: 'number', required: true }
+    ]
   },
   [ALERT_TYPES.VOLUME_SPIKE]: {
     icon: IconVolume,
     label: 'Volume Spike',
     description: 'Alert on high trading volume',
     color: 'yellow',
+    category: 'Volume',
+    difficulty: 'Basic',
     unit: '$',
-    placeholder: 'Enter volume threshold'
+    placeholder: 'Enter volume threshold',
+    fields: [
+      { name: 'targetValue', label: 'Volume Threshold', type: 'number', required: true }
+    ]
+  },
+
+  // Advanced Technical Alerts
+  [ALERT_TYPES.MOVING_AVERAGE]: {
+    icon: IconChartLine,
+    label: 'Moving Average Cross',
+    description: 'Alert when price crosses above/below moving average',
+    color: 'purple',
+    category: 'Technical',
+    difficulty: 'Advanced',
+    unit: '',
+    placeholder: 'Configure MA settings',
+    fields: [
+      { name: 'period', label: 'MA Period (days)', type: 'number', required: true, min: 5, max: 200 },
+      { name: 'direction', label: 'Cross Direction', type: 'select', required: true, 
+        options: [
+          { value: 'above', label: 'Price crosses above MA (Bullish)' },
+          { value: 'below', label: 'Price crosses below MA (Bearish)' }
+        ]
+      }
+    ]
+  },
+  [ALERT_TYPES.PRICE_MOMENTUM]: {
+    icon: IconBolt,
+    label: 'Price Momentum',
+    description: 'Alert on price acceleration/deceleration',
+    color: 'orange',
+    category: 'Technical',
+    difficulty: 'Advanced',
+    unit: '%',
+    placeholder: 'Set momentum threshold',
+    fields: [
+      { name: 'momentumThreshold', label: 'Momentum Threshold (%)', type: 'number', required: true, min: 1, max: 50 },
+      { name: 'timeframe', label: 'Timeframe (minutes)', type: 'select', required: true,
+        options: [
+          { value: 15, label: '15 minutes' },
+          { value: 30, label: '30 minutes' },
+          { value: 60, label: '1 hour' },
+          { value: 240, label: '4 hours' }
+        ]
+      }
+    ]
+  },
+  [ALERT_TYPES.VOLATILITY_SPIKE]: {
+    icon: IconActivity,
+    label: 'Volatility Spike',
+    description: 'Alert during high volatility periods',
+    color: 'red',
+    category: 'Technical',
+    difficulty: 'Advanced',
+    unit: 'x',
+    placeholder: 'Set volatility multiplier',
+    fields: [
+      { name: 'volatilityMultiplier', label: 'Volatility Multiplier', type: 'number', required: true, min: 1, max: 10 }
+    ]
+  },
+  [ALERT_TYPES.SUPPORT_RESISTANCE]: {
+    icon: IconTarget,
+    label: 'Support/Resistance',
+    description: 'Alert when price approaches key levels',
+    color: 'cyan',
+    category: 'Technical',
+    difficulty: 'Expert',
+    unit: '',
+    placeholder: 'Set level and proximity',
+    fields: [
+      { name: 'level', label: 'Price Level ($)', type: 'number', required: true },
+      { name: 'proximity', label: 'Proximity (%)', type: 'number', required: true, min: 0.1, max: 10 }
+    ]
+  },
+
+  // Composite Alerts
+  [ALERT_TYPES.BULLISH_BREAKOUT]: {
+    icon: IconTrendingUpDown,
+    label: 'Bullish Breakout',
+    description: 'Price + volume + momentum alignment (bullish)',
+    color: 'green',
+    category: 'Composite',
+    difficulty: 'Expert',
+    unit: '',
+    placeholder: 'Configure breakout conditions',
+    fields: [
+      { name: 'priceThreshold', label: 'Price Threshold ($)', type: 'number', required: true },
+      { name: 'volumeMultiplier', label: 'Volume Multiplier', type: 'number', required: true, min: 1, max: 10 },
+      { name: 'momentumMin', label: 'Min Momentum (%)', type: 'number', required: true, min: 1 }
+    ]
+  },
+  [ALERT_TYPES.BEARISH_BREAKDOWN]: {
+    icon: IconTrendingDown,
+    label: 'Bearish Breakdown',
+    description: 'Price + volume + momentum alignment (bearish)',
+    color: 'red',
+    category: 'Composite',
+    difficulty: 'Expert',
+    unit: '',
+    placeholder: 'Configure breakdown conditions',
+    fields: [
+      { name: 'priceThreshold', label: 'Price Threshold ($)', type: 'number', required: true },
+      { name: 'volumeMultiplier', label: 'Volume Multiplier', type: 'number', required: true, min: 1, max: 10 },
+      { name: 'momentumMax', label: 'Max Momentum (%)', type: 'number', required: true, max: -1 }
+    ]
+  },
+
+  // Social Alerts (LunarCrush Integration)
+  [ALERT_TYPES.SENTIMENT_DIVERGENCE]: {
+    icon: IconMoodSmile,
+    label: 'Sentiment Divergence',
+    description: 'Price and sentiment moving in opposite directions',
+    color: 'pink',
+    category: 'Social',
+    difficulty: 'Advanced',
+    unit: '%',
+    placeholder: 'Set divergence threshold',
+    fields: [
+      { name: 'divergenceThreshold', label: 'Divergence Threshold (%)', type: 'number', required: true, min: 10, max: 100 }
+    ]
+  },
+  [ALERT_TYPES.SOCIAL_MOMENTUM]: {
+    icon: IconUsers,
+    label: 'Social Momentum',
+    description: 'Surge in social media activity and engagement',
+    color: 'blue',
+    category: 'Social',
+    difficulty: 'Advanced',
+    unit: 'x',
+    placeholder: 'Set social activity multipliers',
+    fields: [
+      { name: 'mentionsMultiplier', label: 'Mentions Multiplier', type: 'number', required: true, min: 1, max: 10 },
+      { name: 'engagementMultiplier', label: 'Engagement Multiplier', type: 'number', required: true, min: 1, max: 10 }
+    ]
   }
+}
+
+// Group alert types by category
+const ALERT_CATEGORIES = {
+  'Price': ['price_above', 'price_below', 'percent_change'],
+  'Volume': ['volume_spike'],
+  'Technical': ['moving_average', 'price_momentum', 'volatility_spike', 'support_resistance'],
+  'Composite': ['bullish_breakout', 'bearish_breakdown'],
+  'Social': ['sentiment_divergence', 'social_momentum']
 }
 
 const AlertModal = () => {
@@ -78,27 +248,47 @@ const AlertModal = () => {
 
   const { cryptoData, addNotification } = useCryptoStore()
   const [selectedType, setSelectedType] = useState(ALERT_TYPES.PRICE_ABOVE)
+  const [activeCategory, setActiveCategory] = useState('Price')
 
-  // Form management
+  // Enhanced form with dynamic fields based on alert type
   const form = useForm({
     initialValues: {
       title: '',
       symbol: 'bitcoin',
       type: ALERT_TYPES.PRICE_ABOVE,
       targetValue: '',
+      // Advanced alert fields
+      period: 20,
+      direction: 'above',
+      momentumThreshold: 5,
+      timeframe: 60,
+      volatilityMultiplier: 2,
+      level: '',
+      proximity: 2,
+      priceThreshold: '',
+      volumeMultiplier: 2,
+      momentumMin: 3,
+      momentumMax: -3,
+      divergenceThreshold: 20,
+      mentionsMultiplier: 2,
+      engagementMultiplier: 2,
+      // Standard fields
       notes: '',
       enabled: true
     },
     validate: {
       title: (value) => (value.length < 2 ? 'Title must be at least 2 characters' : null),
-      targetValue: (value) => {
-        if (!value || value <= 0) return 'Target value must be greater than 0'
+      targetValue: (value, values) => {
+        const config = ALERT_TYPE_CONFIGS[values.type]
+        if (config?.fields?.some(f => f.name === 'targetValue' && f.required)) {
+          if (!value || value <= 0) return 'Target value must be greater than 0'
+        }
         return null
       }
     }
   })
 
-  // Initialize form when modal opens or editing
+  // Initialize form when modal opens
   useEffect(() => {
     if (isAlertModalOpen) {
       if (selectedAlert) {
@@ -107,22 +297,29 @@ const AlertModal = () => {
           title: selectedAlert.title,
           symbol: selectedAlert.symbol,
           type: selectedAlert.type,
-          targetValue: selectedAlert.targetValue,
-          notes: selectedAlert.notes || '',
+          ...selectedAlert, // Include all alert-specific fields
           enabled: selectedAlert.status === 'active'
         })
         setSelectedType(selectedAlert.type)
+        
+        // Set active category based on alert type
+        Object.entries(ALERT_CATEGORIES).forEach(([category, types]) => {
+          if (types.includes(selectedAlert.type)) {
+            setActiveCategory(category)
+          }
+        })
       } else {
         // Creating new alert with prefill data
+        const initialType = modalPrefillData.type || ALERT_TYPES.PRICE_ABOVE
         form.setValues({
           title: '',
           symbol: modalPrefillData.symbol || 'bitcoin',
-          type: modalPrefillData.type || ALERT_TYPES.PRICE_ABOVE,
+          type: initialType,
           targetValue: modalPrefillData.targetValue || '',
           notes: '',
           enabled: true
         })
-        setSelectedType(modalPrefillData.type || ALERT_TYPES.PRICE_ABOVE)
+        setSelectedType(initialType)
       }
     }
   }, [isAlertModalOpen, selectedAlert, modalPrefillData])
@@ -131,6 +328,13 @@ const AlertModal = () => {
   const handleTypeSelect = (type) => {
     setSelectedType(type)
     form.setFieldValue('type', type)
+    
+    // Auto-generate title if empty
+    if (!form.values.title) {
+      const config = ALERT_TYPE_CONFIGS[type]
+      const symbol = form.values.symbol.toUpperCase()
+      form.setFieldValue('title', `${config.label} - ${symbol}`)
+    }
   }
 
   // Get current price for context
@@ -144,12 +348,10 @@ const AlertModal = () => {
     try {
       const alertData = {
         ...values,
-        targetValue: parseFloat(values.targetValue),
         symbol: values.symbol.toLowerCase()
       }
 
       if (selectedAlert) {
-        // Update existing alert
         updateAlert(selectedAlert.id, alertData)
         addNotification({
           type: 'success',
@@ -157,8 +359,7 @@ const AlertModal = () => {
           message: `${values.title} has been updated successfully`
         })
       } else {
-        // Create new alert
-        const newAlert = createAlert(alertData)
+        createAlert(alertData)
         addNotification({
           type: 'success',
           title: 'Alert Created',
@@ -178,8 +379,55 @@ const AlertModal = () => {
   }
 
   const selectedConfig = ALERT_TYPE_CONFIGS[selectedType]
-  const SelectedIcon = selectedConfig.icon
+  const SelectedIcon = selectedConfig?.icon || IconBell
   const currentPrice = getCurrentPrice(form.values.symbol)
+
+  // Render dynamic fields based on alert type
+  const renderAlertFields = () => {
+    const config = ALERT_TYPE_CONFIGS[selectedType]
+    if (!config?.fields) return null
+
+    return config.fields.map((field) => {
+      switch (field.type) {
+        case 'number':
+          return (
+            <NumberInput
+              key={field.name}
+              label={field.label}
+              placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+              {...form.getInputProps(field.name)}
+              min={field.min}
+              max={field.max}
+              required={field.required}
+              rightSection={config.unit && <Text size="xs" c="dimmed">{config.unit}</Text>}
+            />
+          )
+        
+        case 'select':
+          return (
+            <Select
+              key={field.name}
+              label={field.label}
+              placeholder={`Select ${field.label.toLowerCase()}`}
+              data={field.options}
+              {...form.getInputProps(field.name)}
+              required={field.required}
+            />
+          )
+        
+        default:
+          return (
+            <TextInput
+              key={field.name}
+              label={field.label}
+              placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+              {...form.getInputProps(field.name)}
+              required={field.required}
+            />
+          )
+      }
+    })
+  }
 
   return (
     <Modal
@@ -187,168 +435,141 @@ const AlertModal = () => {
       onClose={closeAlertModal}
       title={
         <Group gap="sm">
-          <IconBell size={20} color="var(--mantine-color-bitcoin-6)" />
+          <IconBell size={20} color="var(--mantine-color-blue-6)" />
           <Text fw={600}>
             {selectedAlert ? 'Edit Alert' : 'Create New Alert'}
           </Text>
+          {selectedConfig && (
+            <Badge color={selectedConfig.color} variant="light" size="sm">
+              {selectedConfig.difficulty}
+            </Badge>
+          )}
         </Group>
       }
       size="lg"
       centered
-      overlayProps={{
-        backgroundOpacity: 0.55,
-        blur: 3,
-      }}
     >
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
+          {/* Alert Type Selection */}
+          <Card withBorder p="md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+            <Text fw={600} mb="sm">Alert Type</Text>
+            
+            <Tabs value={activeCategory} onChange={setActiveCategory}>
+              <Tabs.List>
+                {Object.keys(ALERT_CATEGORIES).map((category) => (
+                  <Tabs.Tab key={category} value={category}>
+                    {category}
+                  </Tabs.Tab>
+                ))}
+              </Tabs.List>
+
+              {Object.entries(ALERT_CATEGORIES).map(([category, types]) => (
+                <Tabs.Panel key={category} value={category} pt="md">
+                  <Grid>
+                    {types.map((type) => {
+                      const config = ALERT_TYPE_CONFIGS[type]
+                      if (!config) return null
+                      
+                      const Icon = config.icon
+                      const isSelected = selectedType === type
+                      
+                      return (
+                        <Grid.Col key={type} span={6}>
+                          <Card
+                            withBorder
+                            p="sm"
+                            style={{
+                              cursor: 'pointer',
+                              backgroundColor: isSelected 
+                                ? `var(--mantine-color-${config.color}-1)` 
+                                : 'rgba(255, 255, 255, 0.02)',
+                              borderColor: isSelected 
+                                ? `var(--mantine-color-${config.color}-4)` 
+                                : 'rgba(255, 255, 255, 0.1)'
+                            }}
+                            onClick={() => handleTypeSelect(type)}
+                          >
+                            <Group gap="sm">
+                              <Icon size={20} color={`var(--mantine-color-${config.color}-6)`} />
+                              <Box flex={1}>
+                                <Text size="sm" fw={600}>{config.label}</Text>
+                                <Text size="xs" c="dimmed">{config.description}</Text>
+                              </Box>
+                              {isSelected && <IconCheck size={16} color={`var(--mantine-color-${config.color}-6)`} />}
+                            </Group>
+                          </Card>
+                        </Grid.Col>
+                      )
+                    })}
+                  </Grid>
+                </Tabs.Panel>
+              ))}
+            </Tabs>
+          </Card>
+
+          {/* Selected Alert Configuration */}
+          {selectedConfig && (
+            <Card withBorder p="md">
+              <Group gap="sm" mb="md">
+                <SelectedIcon size={24} color={`var(--mantine-color-${selectedConfig.color}-6)`} />
+                <Box>
+                  <Text fw={600}>{selectedConfig.label}</Text>
+                  <Text size="sm" c="dimmed">{selectedConfig.description}</Text>
+                </Box>
+                <Badge color={selectedConfig.color} variant="light">
+                  {selectedConfig.category}
+                </Badge>
+              </Group>
+
+              <Stack gap="md">
+                {/* Basic Fields */}
+                <TextInput
+                  label="Alert Title"
+                  placeholder="Enter a descriptive title"
+                  {...form.getInputProps('title')}
+                  required
+                />
+
+                <Select
+                  label="Cryptocurrency"
+                  placeholder="Select cryptocurrency"
+                  data={[
+                    { value: 'bitcoin', label: 'Bitcoin (BTC)' },
+                    { value: 'ethereum', label: 'Ethereum (ETH)' },
+                  ]}
+                  {...form.getInputProps('symbol')}
+                  required
+                />
+
+                {/* Dynamic Alert-Specific Fields */}
+                {renderAlertFields()}
+
+                <Textarea
+                  label="Notes (Optional)"
+                  placeholder="Add any additional notes about this alert"
+                  {...form.getInputProps('notes')}
+                  rows={2}
+                />
+              </Stack>
+            </Card>
+          )}
+
           {/* Current Price Context */}
           {currentPrice > 0 && (
-            <Alert 
-              icon={<IconInfoCircle size={16} />} 
-              color="blue" 
-              variant="light"
-            >
+            <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
               <Text size="sm">
-                Current {form.values.symbol.toUpperCase()} price: 
-                <Text component="span" fw={600} ml={4}>
-                  ${currentPrice.toLocaleString(undefined, { 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: 2 
-                  })}
-                </Text>
+                Current {form.values.symbol.toUpperCase()} price: <Text span fw={600}>${currentPrice.toLocaleString()}</Text>
               </Text>
             </Alert>
           )}
 
-          {/* Alert Title - Enhanced for testing */}
-          <TextInput
-            label="Alert Title"
-            placeholder="E.g., Bitcoin hits $120K"
-            data-testid="alert-title-input"
-            id="alert-title"
-            {...form.getInputProps('title')}
-            required
-          />
-
-          {/* Symbol Selection */}
-          <Select
-            label="Cryptocurrency"
-            data={[
-              { value: 'bitcoin', label: 'Bitcoin (BTC)' },
-              { value: 'ethereum', label: 'Ethereum (ETH)' }
-            ]}
-            data-testid="alert-symbol-select"
-            {...form.getInputProps('symbol')}
-            required
-          />
-
-          {/* Alert Type Selection */}
-          <Box>
-            <Text size="sm" fw={500} mb="xs">Alert Type</Text>
-            <Group gap="xs">
-              {Object.entries(ALERT_TYPE_CONFIGS).map(([type, config]) => {
-                const Icon = config.icon
-                const isSelected = selectedType === type
-                
-                return (
-                  <Card
-                    key={type}
-                    p="sm"
-                    withBorder
-                    style={{
-                      cursor: 'pointer',
-                      backgroundColor: isSelected 
-                        ? 'rgba(247, 147, 26, 0.1)' 
-                        : 'rgba(255, 255, 255, 0.05)',
-                      borderColor: isSelected 
-                        ? 'var(--mantine-color-bitcoin-6)' 
-                        : 'rgba(255, 255, 255, 0.1)'
-                    }}
-                    onClick={() => handleTypeSelect(type)}
-                    data-testid={`alert-type-${type}`}
-                  >
-                    <Group gap="xs" justify="center">
-                      <Icon 
-                        size={16} 
-                        color={isSelected ? 'var(--mantine-color-bitcoin-6)' : '#C1C2C5'} 
-                      />
-                      <Text 
-                        size="xs" 
-                        fw={isSelected ? 600 : 400}
-                        c={isSelected ? 'bitcoin' : 'dimmed'}
-                      >
-                        {config.label}
-                      </Text>
-                    </Group>
-                  </Card>
-                )
-              })}
-            </Group>
-            <Text size="xs" c="dimmed" mt={4}>
-              {selectedConfig.description}
-            </Text>
-          </Box>
-
-          {/* Target Value - Enhanced for testing */}
-          <NumberInput
-            label={`Target ${selectedConfig.label}`}
-            placeholder={selectedConfig.placeholder}
-            leftSection={selectedConfig.unit}
-            min={0}
-            step={selectedType === ALERT_TYPES.PERCENT_CHANGE ? 0.1 : 1}
-            decimalScale={selectedType === ALERT_TYPES.PERCENT_CHANGE ? 2 : 2}
-            data-testid="alert-target-input"
-            id="alert-target-value"
-            {...form.getInputProps('targetValue')}
-            required
-          />
-
-          {/* Notes */}
-          <Textarea
-            label="Notes (Optional)"
-            placeholder="Additional context for this alert..."
-            minRows={2}
-            maxRows={4}
-            data-testid="alert-notes-input"
-            {...form.getInputProps('notes')}
-          />
-
-          <Divider />
-
-          {/* Alert Settings */}
-          <Group justify="space-between">
-            <Box>
-              <Text size="sm" fw={500}>Enable Alert</Text>
-              <Text size="xs" c="dimmed">
-                Alert will be active immediately after creation
-              </Text>
-            </Box>
-            <Switch
-              size="md"
-              color="bitcoin"
-              data-testid="alert-enabled-switch"
-              {...form.getInputProps('enabled', { type: 'checkbox' })}
-            />
-          </Group>
-
           {/* Action Buttons */}
-          <Group justify="flex-end" gap="sm" mt="md">
-            <Button 
-              variant="light" 
-              color="gray"
-              leftSection={<IconX size={16} />}
-              onClick={closeAlertModal}
-              data-testid="alert-cancel-button"
-            >
+          <Group justify="space-between">
+            <Button variant="light" onClick={closeAlertModal}>
               Cancel
             </Button>
-            <Button 
-              type="submit"
-              color="bitcoin"
-              leftSection={<IconCheck size={16} />}
-              data-testid="alert-submit-button"
-            >
+            <Button type="submit" leftSection={<IconBell size={16} />}>
               {selectedAlert ? 'Update Alert' : 'Create Alert'}
             </Button>
           </Group>
