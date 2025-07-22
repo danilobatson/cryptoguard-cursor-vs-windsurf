@@ -45,11 +45,11 @@ const NotificationBanner = ({ onDismiss }) => {
 
     checkPermission();
     
-    // Check permission periodically
-    const interval = setInterval(checkPermission, 3000);
+    // Check permission every 10 seconds (reduced frequency)
+    const interval = setInterval(checkPermission, 10000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, []); // Empty dependency array to prevent loops
 
   const handleRequestPermission = async () => {
     try {
@@ -72,13 +72,14 @@ const NotificationBanner = ({ onDismiss }) => {
     setIsVisible(false);
     setIsDismissed(true);
     localStorage.setItem('notification-banner-dismissed', 'true');
-    onDismiss?.();
+    if (onDismiss) onDismiss();
   };
 
   const handleOpenSettings = () => {
     window.open('chrome://settings/content/notifications', '_blank');
   };
 
+  // Don't render if not visible or dismissed
   if (!isVisible || isDismissed) {
     return null;
   }

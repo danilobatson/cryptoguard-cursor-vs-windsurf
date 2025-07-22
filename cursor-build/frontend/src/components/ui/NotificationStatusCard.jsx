@@ -27,17 +27,18 @@ const NotificationStatusCard = () => {
   useEffect(() => {
     const checkPermission = () => {
       if ('Notification' in window) {
-        setPermission(Notification.permission);
+        const currentPermission = Notification.permission;
+        setPermission(currentPermission);
       }
     };
 
     checkPermission();
     
-    // Check permission every 2 seconds to catch manual changes
-    const interval = setInterval(checkPermission, 2000);
+    // Check permission every 5 seconds (reduced frequency)
+    const interval = setInterval(checkPermission, 5000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, []); // Empty dependency array to prevent loops
 
   const getPermissionConfig = () => {
     switch (permission) {
@@ -106,7 +107,8 @@ const NotificationStatusCard = () => {
 
   const handleRefreshStatus = () => {
     if ('Notification' in window) {
-      setPermission(Notification.permission);
+      const currentPermission = Notification.permission;
+      setPermission(currentPermission);
     }
   };
 

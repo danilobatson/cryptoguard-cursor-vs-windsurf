@@ -303,3 +303,16 @@ function getApiDocumentation() {
 </html>
   `;
 }
+
+// Simple health check endpoint
+if (path === '/health') {
+  return new ResponseBuilder()
+    .setData({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: Date.now() - startTime,
+      api_version: '3.0'
+    })
+    .setHeaders(corsHeaders)
+    .build();
+}

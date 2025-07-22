@@ -64,9 +64,16 @@ const ALERT_TYPE_CONFIGS = {
 };
 
 // Individual Alert Card Component
-const AlertCard = ({ alert, onEdit, onDelete, onToggle, currentPrice }) => {
+const AlertCard = ({
+	alert,
+	onEdit,
+	onDelete,
+	onToggle,
+	currentPrice,
+	debugInfo,
+}) => {
 	const config = ALERT_TYPE_CONFIGS[alert.type];
-	const Icon = config?.icon || IconBell;
+	const Icon = config.icon;
 
 	const getStatusColor = (status) => {
 		switch (status) {
@@ -98,42 +105,38 @@ const AlertCard = ({ alert, onEdit, onDelete, onToggle, currentPrice }) => {
 	const isTriggered = alert.status === ALERT_STATUS.TRIGGERED;
 	const isActive = alert.status === ALERT_STATUS.ACTIVE;
 
-	// FIXED: Safe number formatting with null checks
-	const formatPrice = (value) => {
-		if (value === null || value === undefined || isNaN(value)) {
-			return 'N/A';
-		}
-		return Number(value).toLocaleString('en-US', {
-			style: 'currency',
-			currency: 'USD',
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2,
+	// 🔥 FIX: Safe price formatting to prevent NaN
+	const formatPrice = (price) => {
+		console.log(`�� [AlertCard] Formatting price:`, {
+			price,
+			type: typeof price,
 		});
-	};
 
-	const formatNumber = (value) => {
-		if (value === null || value === undefined || isNaN(value)) {
-			return 'N/A';
-		}
-		return Number(value).toLocaleString();
-	};
-
-	const getTargetValueDisplay = () => {
-		const targetValue = alert.targetValue || alert.targetPrice;
-		if (!targetValue && targetValue !== 0) {
-			return 'N/A';
+		if (price === null || price === undefined) {
+			return 'No data';
 		}
 
-		switch (alert.type) {
-			case ALERT_TYPES.PRICE_ABOVE:
-			case ALERT_TYPES.PRICE_BELOW:
-				return formatPrice(targetValue);
-			case ALERT_TYPES.PERCENT_CHANGE:
-				return `${formatNumber(targetValue)}%`;
-			case ALERT_TYPES.VOLUME_SPIKE:
-				return `${formatNumber(targetValue)}x`;
-			default:
-				return formatNumber(targetValue);
+		// Convert to number safely
+		const numPrice =
+			typeof price === 'string' ? parseFloat(price) : Number(price);
+
+		if (isNaN(numPrice)) {
+			console.warn(`⚠️ [AlertCard] Price is NaN:`, price);
+			return 'Invalid price';
+		}
+
+		if (numPrice <= 0) {
+			console.warn(`⚠️ [AlertCard] Price is zero or negative:`, numPrice);
+			return 'Invalid price';
+		}
+
+		try {
+			const formatted = `$${numPrice.toLocaleString()}`;
+			console.log(`✅ [AlertCard] Formatted price: ${formatted}`);
+			return formatted;
+		} catch (error) {
+			console.error(`❌ [AlertCard] Formatting error:`, error);
+			return `$${numPrice}`;
 		}
 	};
 
@@ -146,126 +149,132 @@ const AlertCard = ({ alert, onEdit, onDelete, onToggle, currentPrice }) => {
 					? 'rgba(255, 193, 7, 0.1)'
 					: 'rgba(255, 255, 255, 0.05)',
 				borderColor: isTriggered
-					? 'var(--mantine-color-yellow-6)'
-					: 'var(--mantine-color-gray-7)',
+					? 'var(--mantine-color-orange-6)'
+					: 'rgba(255, 255, 255, 0.1)',
 			}}>
 			<Group justify='space-between' align='flex-start'>
-				<Group gap='md' flex={1}>
+				<Group gap='sm' style={{ flex: 1 }}>
 					<Box
 						style={{
 							padding: '8px',
 							borderRadius: '8px',
-							backgroundColor: `rgba(${
-								config?.color === 'green'
-									? '76, 175, 80'
-									: config?.color === 'red'
-									? '244, 67, 54'
-									: config?.color === 'blue'
-									? '33, 150, 243'
-									: '255, 193, 7'
-							}, 0.1)`,
+							backgroundColor: `var(--mantine-color-${config.color}-1)`,
 						}}>
-						<Icon
-							size={20}
-							color={`var(--mantine-color-${config?.color || 'yellow'}-6)`}
-						/>
+						<Icon size={20} color={`var(--mantine-color-${config.color}-6)`} />
 					</Box>
 
-					<Stack gap={4} flex={1}>
-						<Group justify='space-between' align='center'>
-							<Text size='sm' fw={600} c='white'>
-								{alert.title ||
-									`${
-										config?.label || 'Alert'
-									} - ${alert.symbol?.toUpperCase()}`}
+					<Stack gap={4} style={{ flex: 1 }}>
+						<Group justify='space-between'>
+							<Text size='sm' fw={600}>
+								{alert.title}
 							</Text>
-							<Group gap='xs'>
-								<Badge
-									size='sm'
-									color={getStatusColor(alert.status)}
-									variant='light'>
-									{alert.status}
-								</Badge>
-								<StatusIcon size={14} />
-							</Group>
+							<Badge
+								size='sm'
+								color={getStatusColor(alert.status)}
+								variant='light'
+								leftSection={<StatusIcon size={12} />}>
+								{alert.status.toUpperCase()}
+							</Badge>
 						</Group>
 
-						<Group gap='lg'>
-							<div>
+						<Group gap='lg' wrap='nowrap'>
+							<Box>
 								<Text size='xs' c='dimmed'>
-									Target
+									Symbol
 								</Text>
-								<Text size='sm' fw={500} c='white'>
-									{getTargetValueDisplay()}
+								<Text size='sm' fw={500}>
+									{alert.symbol.toUpperCase()}
 								</Text>
-							</div>
+							</Box>
 
-							{currentPrice && (
-								<div>
-									<Text size='xs' c='dimmed'>
-										Current
-									</Text>
-									<Text size='sm' fw={500} c='white'>
+							<Box>
+								<Text size='xs' c='dimmed'>
+									Target Value
+								</Text>
+								<Text size='sm' fw={500}>
+									${alert?.targetValue?.toLocaleString()}
+								</Text>
+							</Box>
+
+							<Box>
+								<Text size='xs' c='dimmed'>
+									Current Price
+								</Text>
+								<Group gap='xs'>
+									<Text
+										size='sm'
+										fw={500}
+										c={
+											currentPrice !== null && !isNaN(currentPrice)
+												? 'white'
+												: 'red'
+										}>
 										{formatPrice(currentPrice)}
 									</Text>
-								</div>
-							)}
-
-							<div>
-								<Text size='xs' c='dimmed'>
-									Created
-								</Text>
-								<Text size='sm' c='white'>
-									{alert.createdAt
-										? new Date(alert.createdAt).toLocaleDateString()
-										: 'Unknown'}
-								</Text>
-							</div>
+									{debugInfo && (
+										<Tooltip label={`Debug: ${debugInfo}`}>
+											<Badge size='xs' variant='light' color='blue'>
+												?
+											</Badge>
+										</Tooltip>
+									)}
+								</Group>
+							</Box>
 						</Group>
 
-						{isTriggered && alert.triggeredAt && (
-							<Group gap='xs'>
-								<IconCheck size={12} color='var(--mantine-color-orange-6)' />
-								<Text size='xs' c='orange'>
-									Triggered: {new Date(alert.triggeredAt).toLocaleString()}
-								</Text>
-							</Group>
+						{alert.notes && (
+							<Text size='xs' c='dimmed' lineClamp={2}>
+								{alert.notes}
+							</Text>
 						)}
+
+						<Group gap='sm'>
+							<Text size='xs' c='dimmed'>
+								Created: {new Date(alert.createdAt).toLocaleDateString()}
+							</Text>
+							{alert.lastChecked && (
+								<Text size='xs' c='dimmed'>
+									• Last checked:{' '}
+									{new Date(alert.lastChecked).toLocaleTimeString()}
+								</Text>
+							)}
+						</Group>
 					</Stack>
 				</Group>
 
-				{/* Action Menu */}
-				<Menu shadow='md' width={200}>
-					<Menu.Target>
-						<ActionIcon variant='subtle' color='gray'>
-							<IconDots size={16} />
-						</ActionIcon>
-					</Menu.Target>
+				<Group gap='sm'>
+					<Menu width={200} shadow='md'>
+						<Menu.Target>
+							<ActionIcon variant='subtle' color='gray'>
+								<IconDots size={16} />
+							</ActionIcon>
+						</Menu.Target>
 
-					<Menu.Dropdown>
-						<Menu.Item
-							color='black'
-							leftSection={<IconEdit size={14} />}
-							onClick={() => onEdit(alert)}>
-							Edit Alert
-						</Menu.Item>
-						<Menu.Item
-							color='black'
-							leftSection={
-								isActive ? <IconBellOff size={14} /> : <IconBell size={14} />
-							}
-							onClick={() => onToggle(alert.id)}>
-							{isActive ? 'Disable' : 'Enable'} Alert
-						</Menu.Item>
-						<Menu.Divider />
-						<Menu.Item
-							color='red'
-							leftSection={<IconTrash size={14} />}
-							onClick={() => onDelete(alert.id)}>
-							Delete Alert
-						</Menu.Item>
-					</Menu.Dropdown>
-				</Menu>
+						<Menu.Dropdown>
+							<Menu.Item
+								color='black'
+								leftSection={<IconEdit size={14} />}
+								onClick={() => onEdit(alert)}>
+								Edit Alert
+							</Menu.Item>
+							<Menu.Item
+								color='black'
+								leftSection={
+									isActive ? <IconBellOff size={14} /> : <IconBell size={14} />
+								}
+								onClick={() => onToggle(alert.id)}>
+								{isActive ? 'Disable' : 'Enable'} Alert
+							</Menu.Item>
+							<Menu.Divider />
+							<Menu.Item
+								color='red'
+								leftSection={<IconTrash size={14} />}
+								onClick={() => onDelete(alert.id)}>
+								Delete Alert
+							</Menu.Item>
+						</Menu.Dropdown>
+					</Menu>
+				</Group>
 			</Group>
 		</Card>
 	);
@@ -275,19 +284,6 @@ const AlertCard = ({ alert, onEdit, onDelete, onToggle, currentPrice }) => {
 const HistoryItem = ({ item }) => {
 	const config = ALERT_TYPE_CONFIGS[item.type];
 	const Icon = config?.icon || IconBell;
-
-	// FIXED: Safe price formatting
-	const formatPrice = (value) => {
-		if (value === null || value === undefined || isNaN(value)) {
-			return 'N/A';
-		}
-		return Number(value).toLocaleString('en-US', {
-			style: 'currency',
-			currency: 'USD',
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2,
-		});
-	};
 
 	return (
 		<Card
@@ -306,17 +302,16 @@ const HistoryItem = ({ item }) => {
 
 				<Stack gap={2} flex={1}>
 					<Group justify='space-between'>
-						<Text size='sm' fw={500} c='white'>
+						<Text size='sm' fw={500}>
 							{item.alertTitle}
 						</Text>
 						<Text size='xs' c='dimmed'>
-							{item.triggeredAt
-								? new Date(item.triggeredAt).toLocaleDateString()
-								: 'Unknown'}
+							{new Date(item.triggeredAt).toLocaleDateString()}
 						</Text>
 					</Group>
 					<Text size='xs' c='dimmed'>
-						{item.symbol?.toUpperCase()} reached {formatPrice(item.triggerPrice)}
+						{item.symbol.toUpperCase()} reached $
+						{item.triggerPrice.toLocaleString()}
 					</Text>
 				</Stack>
 			</Group>
@@ -337,113 +332,199 @@ const AlertsList = () => {
 		openAlertModal,
 		getActiveAlerts,
 		getTriggeredAlerts,
-		clearHistory,
+		clearTriggeredAlerts,
 		getRecentHistory,
 	} = useAlertStore();
 
-	const { cryptoData, addNotification } = useCryptoStore();
+	// 🔥 CRITICAL FIX: Access crypto store data properly
+	const cryptoData = useCryptoStore((state) => state.cryptoData);
+	const { addNotification } = useCryptoStore();
 
 	const activeAlerts = getActiveAlerts();
 	const triggeredAlerts = getTriggeredAlerts();
 	const recentHistory = getRecentHistory(10);
 
-	const handleEditAlert = (alert) => {
-		editAlert(alert);
-		addNotification({
-			type: 'info',
-			title: 'Edit Alert',
-			message: `Editing alert: ${alert.title}`,
+	// 🔥 FIXED: Get current price from REAL crypto store data
+	const getCurrentPrice = (symbol) => {
+		const symbolKey = symbol.toLowerCase();
+
+		// Access crypto data from the store
+		const data = cryptoData?.[symbolKey];
+
+		// Comprehensive debug logging
+		console.log(`🔍 [AlertsList] Getting price for ${symbol}:`, {
+			symbolKey,
+			cryptoDataKeys: Object.keys(cryptoData || {}),
+			data: data,
+			dataPrice: data?.price,
+			dataType: typeof data?.price,
 		});
+
+		if (!data) {
+			console.warn(`❌ [AlertsList] No data found for symbol: ${symbol}`);
+			console.warn('❌ Available symbols:', Object.keys(cryptoData || {}));
+			return null;
+		}
+
+		// Try multiple price fields to ensure we get real data
+		const price =
+			data.price || data.close || data.current_price || data.last_price;
+
+		if (price !== null && price !== undefined) {
+			const numPrice =
+				typeof price === 'string' ? parseFloat(price) : Number(price);
+			console.log(
+				`✅ [AlertsList] Real price for ${symbol}: $${numPrice.toLocaleString()}`
+			);
+			return numPrice;
+		}
+
+		console.warn(
+			`❌ [AlertsList] No price field found for ${symbol}:`,
+			Object.keys(data)
+		);
+		return null;
 	};
 
-	const handleDeleteAlert = (alertId) => {
+	const handleEdit = (alert) => {
+		editAlert(alert);
+	};
+
+	const handleDelete = (alertId) => {
 		deleteAlert(alertId);
 		addNotification({
-			type: 'success',
+			type: 'info',
 			title: 'Alert Deleted',
-			message: 'Alert has been successfully removed',
+			message: 'Alert has been permanently removed',
 		});
 	};
 
-	const handleToggleAlert = (alertId) => {
-		const alert = alerts.find((a) => a.id === alertId);
-		const newStatus = alert?.status === ALERT_STATUS.ACTIVE ? 'disabled' : 'active';
-
+	const handleToggle = (alertId) => {
 		toggleAlert(alertId);
+		const alert = alerts.find((a) => a.id === alertId);
+		const newStatus =
+			alert?.status === ALERT_STATUS.ACTIVE ? 'disabled' : 'enabled';
+
 		addNotification({
 			type: 'info',
-			title: `Alert ${newStatus === 'active' ? 'Enabled' : 'Disabled'}`,
-			message: `Alert has been ${newStatus === 'active' ? 'activated' : 'paused'}`,
+			title: `Alert ${newStatus}`,
+			message: `Alert has been ${newStatus}`,
 		});
 	};
 
-	const getCurrentPrice = (symbol) => {
-		const data = cryptoData[symbol];
-		return data?.price || data?.close || null;
+	const handleClearTriggered = () => {
+		clearTriggeredAlerts();
+		addNotification({
+			type: 'success',
+			title: 'Triggered Alerts Cleared',
+			message: 'All triggered alerts have been reset to active',
+		});
 	};
 
 	return (
 		<Stack gap='lg'>
-			{/* Header Stats */}
-			<Card
-				padding='lg'
-				radius='md'
-				style={{
-					background: 'rgba(255, 255, 255, 0.08)',
-					backdropFilter: 'blur(10px)',
-					border: '1px solid rgba(255, 255, 255, 0.1)',
-				}}>
-				<Group justify='space-between' align='center'>
-					<Box>
-						<Text fw={600} c='white' size='lg'>
-							Alert Center
+			{/* Stats Overview */}
+			<Grid>
+				<Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+					<Card
+						withBorder
+						style={{
+							backgroundColor: 'rgba(76, 175, 80, 0.1)',
+							textAlign: 'center',
+						}}>
+						<Text size='xs' c='dimmed'>
+							Active Alerts
 						</Text>
-						<Text size='sm' c='dimmed'>
-							Manage your cryptocurrency price alerts
+						<Text size='xl' fw={700} c='green'>
+							{activeAlerts.length}
 						</Text>
-					</Box>
+					</Card>
+				</Grid.Col>
+				<Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+					<Card
+						withBorder
+						style={{
+							backgroundColor: 'rgba(255, 193, 7, 0.1)',
+							textAlign: 'center',
+						}}>
+						<Text size='xs' c='dimmed'>
+							Triggered Today
+						</Text>
+						<Text size='xl' fw={700} c='yellow'>
+							{triggeredAlerts.length}
+						</Text>
+					</Card>
+				</Grid.Col>
+				<Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+					<Card
+						withBorder
+						style={{
+							backgroundColor: 'rgba(33, 150, 243, 0.1)',
+							textAlign: 'center',
+						}}>
+						<Text size='xs' c='dimmed'>
+							Total Alerts
+						</Text>
+						<Text size='xl' fw={700} c='blue'>
+							{alerts.length}
+						</Text>
+					</Card>
+				</Grid.Col>
+				<Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+					<Card
+						withBorder
+						style={{
+							backgroundColor: 'rgba(156, 39, 176, 0.1)',
+							textAlign: 'center',
+						}}>
+						<Text size='xs' c='dimmed'>
+							History Items
+						</Text>
+						<Text size='xl' fw={700} c='violet'>
+							{alertHistory.length}
+						</Text>
+					</Card>
+				</Grid.Col>
+			</Grid>
 
-					<Group gap='xl'>
-						<div style={{ textAlign: 'center' }}>
-							<Text size='xl' fw={700} c='orange'>
-								{activeAlerts.length}
-							</Text>
-							<Text size='xs' c='dimmed'>
-								Active Alerts
-							</Text>
-						</div>
+			{/* Debug Info - Show current crypto data */}
+			{cryptoData && Object.keys(cryptoData).length > 0 && (
+				<Alert color='blue' variant='light'>
+					<Text size='sm' fw={500}>
+						🔍 Debug: Real Crypto Store Data
+					</Text>
+					<Text size='xs' mt='xs'>
+						{Object.entries(cryptoData)
+							.map(([symbol, data]) => {
+								const price =
+									data?.price || data?.close || data?.current_price || 'N/A';
+								const source = data?.source || 'API';
+								return `${symbol.toUpperCase()}: $${
+									typeof price === 'number' ? price.toLocaleString() : price
+								} (${source}) `;
+							})
+							.join(' | ')}
+					</Text>
+					<Text size='xs' c='dimmed' mt='xs'>
+						Store updated: {new Date().toLocaleTimeString()}
+					</Text>
+				</Alert>
+			)}
 
-						<div style={{ textAlign: 'center' }}>
-							<Text size='xl' fw={700} c='yellow'>
-								{triggeredAlerts.length}
-							</Text>
-							<Text size='xs' c='dimmed'>
-								Triggered Today
-							</Text>
-						</div>
+			{/* Data Source Warning */}
+			{(!cryptoData || Object.keys(cryptoData).length === 0) && (
+				<Alert color='orange' variant='light'>
+					<Text size='sm' fw={500}>
+						⚠️ No Crypto Data Available
+					</Text>
+					<Text size='xs' mt='xs'>
+						Waiting for crypto data to load from the store. Please wait a
+						moment...
+					</Text>
+				</Alert>
+			)}
 
-						<div style={{ textAlign: 'center' }}>
-							<Text size='xl' fw={700} c='blue'>
-								{alerts.length}
-							</Text>
-							<Text size='xs' c='dimmed'>
-								Total Alerts
-							</Text>
-						</div>
-
-						<div style={{ textAlign: 'center' }}>
-							<Text size='xl' fw={700} c='green'>
-								{recentHistory.length}
-							</Text>
-							<Text size='xs' c='dimmed'>
-								History Items
-							</Text>
-						</div>
-					</Group>
-				</Group>
-			</Card>
-
-			{/* Tabs for different views */}
+			{/* Tabs */}
 			<Tabs value={activeTab} onChange={setActiveTab}>
 				<Tabs.List>
 					<Tabs.Tab value='active' leftSection={<IconBell size={16} />}>
@@ -458,124 +539,111 @@ const AlertsList = () => {
 				</Tabs.List>
 
 				{/* Active Alerts Tab */}
-				<Tabs.Panel value='active' pt='lg'>
+				<Tabs.Panel value='active' pt='md'>
 					{activeAlerts.length === 0 ? (
-						<Card
-							withBorder
-							p='xl'
-							style={{
-								backgroundColor: 'rgba(255, 255, 255, 0.05)',
-								textAlign: 'center',
-							}}>
-							<IconBell size={48} color='var(--mantine-color-gray-6)' />
-							<Text size='lg' fw={600} mt='md' c='white'>
-								No Active Alerts
-							</Text>
-							<Text size='sm' c='dimmed' mb='lg'>
-								Create your first alert to get notified of price changes
+						<Alert icon={<IconBell size={16} />} color='blue' variant='light'>
+							<Text size='sm'>
+								No active alerts yet. Create your first alert to start
+								monitoring cryptocurrency prices!
 							</Text>
 							<Button
-								leftSection={<IconPlus size={16} />}
-								onClick={openAlertModal}>
-								Create Your First Alert
+								size='xs'
+								variant='light'
+								color='blue'
+								mt='sm'
+								onClick={() => openAlertModal()}>
+								Create Alert
 							</Button>
-						</Card>
+						</Alert>
 					) : (
-						<Stack gap='md'>
-							{activeAlerts.map((alert) => (
-								<AlertCard
-									key={alert.id}
-									alert={alert}
-									currentPrice={getCurrentPrice(alert.symbol)}
-									onEdit={handleEditAlert}
-									onDelete={handleDeleteAlert}
-									onToggle={handleToggleAlert}
-								/>
-							))}
+						<Stack gap='sm'>
+							{activeAlerts.map((alert) => {
+								const currentPrice = getCurrentPrice(alert.symbol);
+								const debugInfo = `Symbol: ${
+									alert.symbol
+								}, Store keys: ${Object.keys(cryptoData || {}).join(
+									', '
+								)}, Raw price: ${currentPrice}`;
+								{
+									console.log('valueeee', alert);
+								}
+								return (
+									<AlertCard
+										key={alert.id}
+										alert={alert}
+										currentPrice={currentPrice}
+										debugInfo={debugInfo}
+										onEdit={handleEdit}
+										onDelete={handleDelete}
+										onToggle={handleToggle}
+									/>
+								);
+							})}
 						</Stack>
 					)}
 				</Tabs.Panel>
 
 				{/* Triggered Alerts Tab */}
-				<Tabs.Panel value='triggered' pt='lg'>
+				<Tabs.Panel value='triggered' pt='md'>
 					{triggeredAlerts.length === 0 ? (
-						<Card
-							withBorder
-							p='xl'
-							style={{
-								backgroundColor: 'rgba(255, 255, 255, 0.05)',
-								textAlign: 'center',
-							}}>
-							<IconCheck size={48} color='var(--mantine-color-gray-6)' />
-							<Text size='lg' fw={600} mt='md' c='white'>
-								No Triggered Alerts
+						<Alert icon={<IconCheck size={16} />} color='green' variant='light'>
+							<Text size='sm'>
+								No triggered alerts at the moment. Active alerts will appear
+								here when their conditions are met.
 							</Text>
-							<Text size='sm' c='dimmed'>
-								Alerts that have been triggered will appear here
-							</Text>
-						</Card>
+						</Alert>
 					) : (
 						<Stack gap='md'>
-							{triggeredAlerts.map((alert) => (
-								<AlertCard
-									key={alert.id}
-									alert={alert}
-									currentPrice={getCurrentPrice(alert.symbol)}
-									onEdit={handleEditAlert}
-									onDelete={handleDeleteAlert}
-									onToggle={handleToggleAlert}
-								/>
-							))}
+							<Group justify='space-between'>
+								<Text size='sm' c='dimmed'>
+									{triggeredAlerts.length} alert(s) have been triggered
+								</Text>
+								<Button
+									size='xs'
+									variant='light'
+									color='orange'
+									onClick={handleClearTriggered}>
+									Reset All to Active
+								</Button>
+							</Group>
+
+							<Stack gap='sm'>
+								{triggeredAlerts.map((alert) => (
+									<AlertCard
+										key={alert.id}
+										alert={alert}
+										currentPrice={getCurrentPrice(alert.symbol)}
+										onEdit={handleEdit}
+										onDelete={handleDelete}
+										onToggle={handleToggle}
+									/>
+								))}
+							</Stack>
 						</Stack>
 					)}
 				</Tabs.Panel>
 
 				{/* History Tab */}
-				<Tabs.Panel value='history' pt='lg'>
+				<Tabs.Panel value='history' pt='md'>
 					{recentHistory.length === 0 ? (
-						<Card
-							withBorder
-							p='xl'
-							style={{
-								backgroundColor: 'rgba(255, 255, 255, 0.05)',
-								textAlign: 'center',
-							}}>
-							<IconHistory size={48} color='var(--mantine-color-gray-6)' />
-							<Text size='lg' fw={600} mt='md' c='white'>
-								No Alert History
+						<Alert
+							icon={<IconHistory size={16} />}
+							color='violet'
+							variant='light'>
+							<Text size='sm'>
+								No alert history yet. When alerts are triggered, they will
+								appear here for your reference.
 							</Text>
-							<Text size='sm' c='dimmed'>
-								Previous alert activations will be shown here
-							</Text>
-						</Card>
+						</Alert>
 					) : (
-						<>
-							<Group justify='space-between' mb='md'>
-								<Text size='lg' fw={600} c='white'>
-									Recent Alert History
-								</Text>
-								<Button
-									size='sm'
-									variant='subtle'
-									color='red'
-									onClick={() => {
-										clearHistory();
-										addNotification({
-											type: 'info',
-											title: 'History Cleared',
-											message: 'Alert history has been cleared',
-										});
-									}}>
-									Clear History
-								</Button>
-							</Group>
-
-							<Stack gap='sm'>
-								{recentHistory.map((item) => (
-									<HistoryItem key={item.id} item={item} />
-								))}
-							</Stack>
-						</>
+						<Stack gap='sm'>
+							<Text size='sm' c='dimmed'>
+								Recent alert history (last {recentHistory.length} items)
+							</Text>
+							{recentHistory.map((item) => (
+								<HistoryItem key={item.id} item={item} />
+							))}
+						</Stack>
 					)}
 				</Tabs.Panel>
 			</Tabs>

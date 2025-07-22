@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import './debug/window-exposure.js'
 import {
   AppShell,
   Group,
@@ -28,33 +27,36 @@ import useAlertInitialization from './hooks/useAlertInitialization'
 import ConnectionStatus from './components/ui/ConnectionStatus'
 
 function App() {
-  const { notifications, addNotification } = useCryptoStore()
+  const { notifications, addNotification, validateAllData } = useCryptoStore()
   const { getActiveAlerts } = useAlertStore()
 
   // Initialize notification system
   useNotifications()
-
+  
   // Initialize alert system with persistence
   const { isInitialized, activeAlertsCount } = useAlertInitialization()
 
-  // Welcome notification on first load
+  // REAL DATA ONLY - Welcome notification
   useEffect(() => {
     const timer = setTimeout(() => {
       addNotification({
         type: 'success',
-        title: '🚀 CryptoGuard v5.3 Active!',
-        message: 'Real-time WebSocket integration ready. Click GO LIVE for instant updates!'
+        title: '🚀 CryptoGuard v6.0 - Real Data Only!',
+        message: 'Now using 100% real LunarCrush API data. No more mock data!'
       })
+      
+      // Validate all data is real
+      validateAllData()
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [addNotification])
+  }, [addNotification, validateAllData])
 
   const handleSetupAlerts = () => {
     addNotification({
       type: 'info',
-      title: 'Alert System Active',
-      message: 'Click "Set Alert" on any crypto card or visit the Alerts tab!'
+      title: 'Real Alert System Active',
+      message: 'Create alerts with real-time LunarCrush data!'
     })
   }
 
@@ -67,124 +69,122 @@ function App() {
   }
 
   return (
-    <AppShell padding="md">
-      <AppShell.Header height={70}>
-        <Container size="xl" h="100%">
-          <Group h="100%" justify="space-between" align="center">
-            {/* Logo Section */}
-            <Group gap="md">
-              <Box
-                style={{
-                  background: 'linear-gradient(135deg, #F7931A 0%, #FFB84D 100%)',
-                  borderRadius: '12px',
-                  padding: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <IconCoin size={28} color="white" />
-              </Box>
-
-              <Box>
-                <Title order={2} size="h3" fw={700} c="white">
-                  CryptoGuard
-                </Title>
-                <Text size="xs" c="dimmed">
-                  Real-time WebSocket Alert System
-                </Text>
-              </Box>
-            </Group>
-
-            {/* Center Section - Connection Status */}
-            <ConnectionStatus />
-
-            {/* Right Section */}
-            <Group gap="md">
-              {/* Alert Counter */}
-              <Tooltip label="Active Alerts" position="bottom">
-                <ActionIcon
-                  variant="light"
-                  color="orange"
-                  size="lg"
-                  onClick={handleSetupAlerts}
+    <>
+      <AppShell padding="md">
+        <AppShell.Header height={70}>
+          <Container size="xl" h="100%">
+            <Group h="100%" justify="space-between" align="center">
+              {/* Logo Section */}
+              <Group gap="md">
+                <Box
+                  style={{
+                    background: 'linear-gradient(135deg, #F7931A 0%, #FFB84D 100%)',
+                    borderRadius: '12px',
+                    padding: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
                 >
-                  <IconBell size={18} />
-                  {activeAlertsCount > 0 && (
+                  <IconCoin size={28} color="white" />
+                </Box>
+                
+                <Box>
+                  <Title order={2} size="h3" fw={700} c="white">
+                    CryptoGuard
+                  </Title>
+                  <Text size="xs" c="dimmed">
+                    Real LunarCrush API Data Only - No Mock Data
+                  </Text>
+                </Box>
+              </Group>
+
+              {/* Center Section - Connection Status */}
+              <ConnectionStatus />
+
+              {/* Right Section */}
+              <Group gap="md">
+                {/* Alert Counter */}
+                {activeAlertsCount > 0 && (
+                  <Tooltip label={`${activeAlertsCount} active alerts monitoring real prices`}>
                     <Badge
-                      size="xs"
                       variant="filled"
-                      color="red"
-                      style={{
-                        position: 'absolute',
-                        top: -2,
-                        right: -2,
-                        minWidth: 16,
-                        height: 16,
-                        padding: 0,
-                        fontSize: '10px'
-                      }}
+                      color={activeAlertsCount > 3 ? "orange" : "blue"}
+                      leftSection={<IconBell size={12} />}
+                      size="lg"
                     >
-                      {activeAlertsCount}
+                      {activeAlertsCount} real alerts
                     </Badge>
-                  )}
-                </ActionIcon>
-              </Tooltip>
+                  </Tooltip>
+                )}
 
-              {/* Settings */}
-              <Tooltip label="Settings" position="bottom">
-                <ActionIcon variant="light" color="gray" size="lg">
-                  <IconSettings size={18} />
-                </ActionIcon>
-              </Tooltip>
+                {/* Storage Status Indicator */}
+                {isInitialized && (
+                  <Tooltip label="Alerts are saved and will persist across browser sessions">
+                    <Badge
+                      variant="light"
+                      color="green"
+                      size="sm"
+                    >
+                      💾 Saved
+                    </Badge>
+                  </Tooltip>
+                )}
 
-              {/* GitHub */}
-              <Tooltip label="View Source Code" position="bottom">
-                <ActionIcon
-                  variant="light"
-                  color="blue"
-                  size="lg"
-                  onClick={handleViewGitHub}
-                >
-                  <IconBrandGithub size={18} />
-                </ActionIcon>
-              </Tooltip>
+                {/* Real Data Badge */}
+                <Tooltip label="100% real LunarCrush API data - no mock data">
+                  <Badge
+                    variant="light"
+                    color="blue"
+                    size="sm"
+                  >
+                    🌙 Real Data
+                  </Badge>
+                </Tooltip>
 
-              {/* Portfolio */}
-              <Tooltip label="My Portfolio" position="bottom">
-                <ActionIcon
-                  component="a"
-                  href="https://danilobatson.github.io/"
-                  target="_blank"
-                  variant="light"
-                  color="violet"
-                  size="lg"
-                >
-                  <IconExternalLink size={18} />
-                </ActionIcon>
-              </Tooltip>
+                {/* Settings */}
+                <Tooltip label="Settings">
+                  <ActionIcon
+                    variant="light"
+                    color="gray"
+                    size="lg"
+                    onClick={() => addNotification({
+                      type: 'info',
+                      title: 'Settings',
+                      message: 'Advanced settings panel coming in next update!'
+                    })}
+                  >
+                    <IconSettings size={18} />
+                  </ActionIcon>
+                </Tooltip>
+
+                {/* GitHub */}
+                <Tooltip label="View source code">
+                  <ActionIcon
+                    variant="light"
+                    color="gray"
+                    size="lg"
+                    onClick={handleViewGitHub}
+                  >
+                    <IconBrandGithub size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
             </Group>
-          </Group>
-        </Container>
-      </AppShell.Header>
+          </Container>
+        </AppShell.Header>
 
-      <AppShell.Main>
-        <Container size="xl">
-          <DashboardGrid />
-          <AlertModal />
-        </Container>
-      </AppShell.Main>
-    </AppShell>
+        <AppShell.Main>
+          <Container size="xl">
+            <DashboardGrid />
+          </Container>
+        </AppShell.Main>
+      </AppShell>
+
+      {/* Alert Modal - Rendered globally */}
+      <AlertModal />
+    </>
   )
 }
 
 export default App
-
-// Import notification utils for testing
-import { testNotification, requestNotificationPermission } from './utils/notificationUtils'
-
-// Expose to window for testing
-if (typeof window !== 'undefined') {
-  window.testNotification = testNotification
-  window.requestNotificationPermission = requestNotificationPermission
-}
