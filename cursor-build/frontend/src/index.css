@@ -151,17 +151,31 @@ html, body {
 /* Fix Tabs */
 .mantine-Tabs-tab {
   color: rgba(255, 255, 255, 0.7) !important;
-  border-bottom: 2px solid transparent !important;
-}
-
-.mantine-Tabs-tab[data-active] {
-  color: #F7931A !important;
-  border-bottom-color: #F7931A !important;
+  transition: all 0.2s ease !important;
 }
 
 .mantine-Tabs-tab:hover {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: #1a1a1a !important; /* Dark text on white background */
+  background-color: rgba(255, 255, 255, 0.9) !important;
 }
+
+.mantine-Tabs-tab[data-active="true"] {
+  color: #3B82F6 !important; /* Keep active tab blue */
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+.mantine-Tabs-tab[data-active="true"]:hover {
+  color: #ffffff !important; /* White text when hovering active tab */
+  background-color: #3B82F6 !important; /* Full blue background */
+}
+
+/* Clean tab list styling */
+.mantine-Tabs-list {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  margin-bottom: 1rem !important;
+}
+
+
 
 
 /* ===== SOPHISTICATED MICRO-INTERACTIONS ===== */
@@ -182,6 +196,7 @@ html, body {
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  background-color: transparent;
 }
 
 .enhanced-button:hover {
@@ -225,11 +240,11 @@ html, body {
 
 /* Pulse Effect */
 @keyframes pulse-glow {
-  0%, 100% { 
+  0%, 100% {
     box-shadow: 0 0 20px rgba(247, 147, 26, 0.3);
     transform: scale(1);
   }
-  50% { 
+  50% {
     box-shadow: 0 0 30px rgba(247, 147, 26, 0.6);
     transform: scale(1.05);
   }
@@ -300,8 +315,8 @@ html, body {
 .shimmer-enhanced {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.1) 25%, 
-    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.2) 50%,
     rgba(255, 255, 255, 0.1) 75%
   );
   background-size: 1000px 100%;
@@ -416,4 +431,3 @@ html, body {
 .hero-section .stagger-item:nth-child(2) { animation-delay: 0.4s; }
 .hero-section .stagger-item:nth-child(3) { animation-delay: 0.6s; }
 .hero-section .stagger-item:nth-child(4) { animation-delay: 0.8s; }
-

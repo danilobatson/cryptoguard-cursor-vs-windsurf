@@ -183,10 +183,11 @@ const DashboardGrid = () => {
 			{/* Dashboard Tabs */}
 			{/* Hero Section */}
 			<HeroSection cryptoData={cryptoData} isRealTime={isRealTimeActive} />
-
 			<Tabs value={activeTab} onChange={setActiveTab}>
 				<Tabs.List>
-					<Tabs.Tab value='overview' leftSection={<IconCards size={16} />}>
+					<Tabs.Tab
+						value='overview'
+						leftSection={<IconCards size={16} />}>
 						Overview
 					</Tabs.Tab>
 					<Tabs.Tab value='charts' leftSection={<IconChartLine size={16} />}>
@@ -203,7 +204,7 @@ const DashboardGrid = () => {
 				<Tabs.Panel value='overview' pt='md'>
 					<Grid>
 						{/* Primary Assets Cards */}
-						<Grid.Col span={{ base: 12, md: 6 }}>
+						<Grid.Col className='hero-section' span={{ base: 12, md: 6 }}>
 							<CryptoCard
 								symbol='bitcoin'
 								data={cryptoData.bitcoin}
@@ -228,7 +229,7 @@ const DashboardGrid = () => {
 							/>
 						</Grid.Col>
 
-						<Grid.Col span={{ base: 12, md: 6 }}>
+						<Grid.Col className='hero-section' span={{ base: 12, md: 6 }}>
 							<CryptoCard
 								symbol='ethereum'
 								data={cryptoData.ethereum}
@@ -268,8 +269,8 @@ const DashboardGrid = () => {
 									<Text size='lg' fw={700} c='green'>
 										<NumberFormatter
 											value={
-												(cryptoData.bitcoin.price || 0) +
-												(cryptoData.ethereum.price || 0)
+												(cryptoData?.bitcoin?.price || 0) +
+												(cryptoData?.ethereum?.price || 0)
 											}
 											prefix='$'
 											thousandSeparator
@@ -278,8 +279,8 @@ const DashboardGrid = () => {
 									</Text>
 									<Text size='xs' c='dimmed'>
 										{(
-											((cryptoData.bitcoin.percent_change_24h || 0) +
-												(cryptoData.ethereum.percent_change_24h || 0)) /
+											((cryptoData?.bitcoin?.percent_change_24h || 0) +
+												(cryptoData?.ethereum?.percent_change_24h || 0)) /
 											2
 										).toFixed(2)}
 										%

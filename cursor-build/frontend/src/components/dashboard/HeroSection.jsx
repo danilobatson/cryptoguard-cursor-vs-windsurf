@@ -11,6 +11,7 @@ const HeroSection = ({ cryptoData, isRealTime }) => {
 
   return (
 		<Card
+			className='hero-section'
 			style={{
 				background:
 					'linear-gradient(135deg, rgba(247, 147, 26, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
@@ -62,6 +63,7 @@ const HeroSection = ({ cryptoData, isRealTime }) => {
 
 				<Group grow>
 					<Card
+						className='gradient-border'
 						style={{
 							background: 'rgba(247, 147, 26, 0.1)',
 							textAlign: 'center',
@@ -79,6 +81,7 @@ const HeroSection = ({ cryptoData, isRealTime }) => {
 						</Text>
 					</Card>
 					<Card
+						className='gradient-border'
 						style={{
 							background: 'rgba(59, 130, 246, 0.1)',
 							textAlign: 'center',
@@ -95,7 +98,7 @@ const HeroSection = ({ cryptoData, isRealTime }) => {
 							/>
 						</Text>
 					</Card>
-					
+
 				</Group>
 			</Stack>
 		</Card>
