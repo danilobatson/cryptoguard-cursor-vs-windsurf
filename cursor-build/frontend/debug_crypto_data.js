@@ -1,0 +1,8 @@
+// Add this temporarily to DashboardGrid.jsx after line 40 (after cryptoData definition)
+console.log('=== CRYPTO DATA DEBUG ===')
+console.log('cryptoData:', cryptoData)
+console.log('bitcoin:', cryptoData?.bitcoin)
+console.log('ethereum:', cryptoData?.ethereum) 
+console.log('bitcoin.close:', cryptoData?.bitcoin?.close)
+console.log('ethereum.close:', cryptoData?.ethereum?.close)
+console.log('=== END DEBUG ===')

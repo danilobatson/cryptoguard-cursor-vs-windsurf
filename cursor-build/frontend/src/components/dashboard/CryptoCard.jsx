@@ -1,11 +1,11 @@
-import { 
-  Card, 
-  Group, 
-  Text, 
-  Badge, 
-  Stack, 
-  Box, 
-  Progress, 
+import {
+  Card,
+  Group,
+  Text,
+  Badge,
+  Stack,
+  Box,
+  Progress,
   ActionIcon,
   Tooltip,
   NumberFormatter,
@@ -13,9 +13,9 @@ import {
   ThemeIcon,
   Divider
 } from '@mantine/core'
-import { 
-  IconTrendingUp, 
-  IconTrendingDown, 
+import {
+  IconTrendingUp,
+  IconTrendingDown,
   IconMinus,
   IconStar,
   IconBell,
@@ -26,10 +26,10 @@ import { useState } from 'react'
 import useCryptoStore from '../../stores/useCryptoStore'
 import { CryptoCardSkeleton } from '../ui/Skeleton'
 
-const CryptoCard = ({ 
-  symbol, 
-  data, 
-  isLoading, 
+const CryptoCard = ({
+  symbol,
+  data,
+  isLoading,
   isRealTime = false,
   onAddAlert,
   onViewChart,
@@ -88,7 +88,7 @@ const CryptoCard = ({
   return (
     <Card withBorder className="crypto-card stagger-item"
       className={isRealTime ? "crypto-glow" : ""}
-      style={{ 
+      style={{
         background: `linear-gradient(135deg, rgba(${colors.secondary.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ')}, 0.15) 0%, rgba(${colors.secondary.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ')}, 0.08) 100%)`,
         border: `1px solid rgba(${colors.secondary.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ')}, 0.4)`,
         backgroundColor: 'rgba(255, 255, 255, 0.12)',
@@ -99,9 +99,9 @@ const CryptoCard = ({
         {/* Header with Symbol and Controls */}
         <Group justify="space-between" align="flex-start">
           <Group gap="sm">
-            <ThemeIcon 
-              size="lg" 
-              variant="gradient" 
+            <ThemeIcon
+              size="lg"
+              variant="gradient"
               gradient={{ from: colors.gradient[0], to: colors.gradient[1], deg: 45 }}
             >
               {symbol === 'bitcoin' ? '₿' : symbol === 'ethereum' ? 'Ξ' : symbol[0].toUpperCase()}
@@ -127,13 +127,13 @@ const CryptoCard = ({
                 <IconStar size={16} />
               </ActionIcon>
             </Tooltip>
-            
+
             <Tooltip label="Set price alert">
               <ActionIcon variant="subtle" color={colors.primary} onClick={handleAddAlert} size="sm">
                 <IconBell size={16} />
               </ActionIcon>
             </Tooltip>
-            
+
             {onViewChart && (
               <Tooltip label="View chart">
                 <ActionIcon variant="subtle" color={colors.primary} onClick={() => onViewChart(symbol)} size="sm">
@@ -147,16 +147,16 @@ const CryptoCard = ({
         {/* Price Display */}
         <Box>
           <Text size="xl" fw={800} style={{ color: '#FFFFFF', lineHeight: 1.2 }}>
-            <NumberFormatter 
-              value={price} 
-              prefix="$" 
-              thousandSeparator 
+            <NumberFormatter
+              value={price}
+              prefix="$"
+              thousandSeparator
               decimalScale={2}
             />
           </Text>
-          
+
           <Group gap="xs" mt="xs">
-            <Badge 
+            <Badge
               color={changeColor}
               leftSection={<ChangeIcon size={14} />}
               variant="light"
@@ -206,10 +206,10 @@ const CryptoCard = ({
               <Box>
                 <Text size="xs" c="dimmed">Market Cap</Text>
                 <Text size="sm" fw={600} c="white">
-                  <NumberFormatter 
-                    value={marketCap} 
-                    prefix="$" 
-                    thousandSeparator 
+                  <NumberFormatter
+                    value={marketCap}
+                    prefix="$"
+                    thousandSeparator
                     suffix={marketCap > 1e12 ? 'T' : marketCap > 1e9 ? 'B' : 'M'}
                     decimalScale={1}
                   />
@@ -218,10 +218,10 @@ const CryptoCard = ({
               <Box>
                 <Text size="xs" c="dimmed">24h Volume</Text>
                 <Text size="sm" fw={600} c="white">
-                  <NumberFormatter 
-                    value={volume24h} 
-                    prefix="$" 
-                    thousandSeparator 
+                  <NumberFormatter
+                    value={volume24h}
+                    prefix="$"
+                    thousandSeparator
                     suffix={volume24h > 1e9 ? 'B' : 'M'}
                     decimalScale={1}
                   />
