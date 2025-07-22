@@ -230,6 +230,49 @@ class WebSocketService {
   }
 }
 
-// Create singleton instance
-const webSocketService = new WebSocketService();
-export default webSocketService;
+// Auto-switch to mock in development if WebSocket fails
+class SmartWebSocketService {
+  constructor() {
+    this.realService = new WebSocketService()
+    this.mockService = null
+    this.currentService = this.realService
+    this.isDevelopmentMode = import.meta.env.DEV
+  }
+
+  async connect(symbols) {
+    if (this.isDevelopmentMode) {
+      try {
+        // Try real WebSocket first
+        await this.realService.connect(symbols)
+        this.currentService = this.realService
+        console.log('🌐 Using real WebSocket service')
+      } catch (error) {
+        console.log('🧪 Real WebSocket failed, switching to mock service for development')
+        
+        // Import and use mock service
+        const { default: mockWebSocketService } = await import('./MockWebSocketService.js')
+        this.mockService = mockWebSocketService
+        this.currentService = this.mockService
+        
+        await this.mockService.connect(symbols)
+      }
+    } else {
+      // Production: only use real WebSocket
+      await this.realService.connect(symbols)
+      this.currentService = this.realService
+    }
+  }
+
+  // Proxy all methods to current service
+  subscribe(symbol) { return this.currentService.subscribe(symbol) }
+  on(event, callback) { return this.currentService.on(event, callback) }
+  off(event, callback) { return this.currentService.off(event, callback) }
+  forceRefresh() { return this.currentService.forceRefresh() }
+  getStatus() { return this.currentService.getStatus() }
+  disconnect() { return this.currentService.disconnect() }
+  destroy() { return this.currentService.destroy() }
+}
+
+// Create smart singleton instance that auto-switches
+const webSocketService = new SmartWebSocketService()
+export default webSocketService
