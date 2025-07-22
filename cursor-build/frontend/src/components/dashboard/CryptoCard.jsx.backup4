@@ -17,13 +17,11 @@ import {
   IconBell,
   IconRefresh,
   IconWifi,
-  IconCloudDownload,
-  IconAlertTriangle,
-  IconClock
+  IconCloudDownload
 } from '@tabler/icons-react'
 import useAlertStore from '../../stores/useAlertStore'
 import useCryptoStore from '../../stores/useCryptoStore'
-import DataFreshnessIndicator from '../ui/DataFreshnessIndicator'
+import RealTimeIndicator from '../ui/RealTimeIndicator'
 
 const CryptoCard = ({ 
   symbol, 
@@ -32,7 +30,7 @@ const CryptoCard = ({
   showRealTimeIndicator = true 
 }) => {
   const { openAlertModal, addNotification } = useAlertStore()
-  const { forceWebSocketRefresh, connectionStatus } = useCryptoStore()
+  const { forceWebSocketRefresh } = useCryptoStore()
 
   if (!data) {
     return (
@@ -40,7 +38,7 @@ const CryptoCard = ({
         padding="lg"
         radius="md"
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          background: 'rgba(255, 255, 255, 0.08)',
           backdropFilter: 'blur(10px)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           minHeight: 200
@@ -59,11 +57,6 @@ const CryptoCard = ({
   const marketCap = data.market_cap || 0
   const galaxyScore = data.galaxy_score || 0
 
-  // Calculate data freshness
-  const lastUpdated = new Date(data.lastUpdated || Date.now())
-  const ageMinutes = (Date.now() - lastUpdated.getTime()) / 60000
-  const source = data.source || 'api'
-
   const isPositive = change24h > 0
   const isNegative = change24h < 0
   const changeColor = isPositive ? 'green' : isNegative ? 'red' : 'gray'
@@ -79,7 +72,7 @@ const CryptoCard = ({
   }
 
   const handleForceRefresh = () => {
-    if (isRealTime && connectionStatus === 'connected') {
+    if (isRealTime) {
       forceWebSocketRefresh()
     }
   }
@@ -91,42 +84,30 @@ const CryptoCard = ({
     return `$${value.toFixed(2)}`
   }
 
-  const getDataQualityWarning = () => {
-    if (source === 'websocket' && connectionStatus === 'connected') {
-      return null // Real-time data, no warning needed
+  const getDataSourceIcon = () => {
+    if (isRealTime) {
+      return <IconWifi size={14} color="green" />
     }
-    
-    if (ageMinutes > 5) {
-      return {
-        color: 'red',
-        message: 'Data may be outdated - click GO LIVE for real-time updates'
-      }
-    }
-    
-    if (ageMinutes > 2) {
-      return {
-        color: 'yellow', 
-        message: 'Using recent API data - click GO LIVE for real-time updates'
-      }
-    }
-    
-    return null
+    return <IconCloudDownload size={14} color="gray" />
   }
 
-  const dataWarning = getDataQualityWarning()
+  const getDataSourceText = () => {
+    if (isRealTime) return 'WebSocket'
+    return 'API'
+  }
 
   return (
     <Card
       padding="lg"
       radius="md"
       style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        background: 'rgba(255, 255, 255, 0.08)',
         backdropFilter: 'blur(10px)',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         position: 'relative'
       }}
     >
-      {/* Header with Symbol and Data Freshness */}
+      {/* Header with Symbol and Real-time Indicator */}
       <Group justify="space-between" align="center" mb="md">
         <Group gap="md">
           <Box>
@@ -134,7 +115,23 @@ const CryptoCard = ({
               {symbol}
             </Text>
             <Group gap="xs" mt={2}>
-              <DataFreshnessIndicator symbol={symbol} data={data} />
+              <Tooltip label={`Data source: ${getDataSourceText()}`}>
+                <Group gap={4}>
+                  {getDataSourceIcon()}
+                  <Text size="xs" c="dimmed">
+                    {getDataSourceText()}
+                  </Text>
+                </Group>
+              </Tooltip>
+              
+              {showRealTimeIndicator && isRealTime && (
+                <RealTimeIndicator 
+                  isActive={true}
+                  label="LIVE"
+                  size="xs"
+                  showIcon={false}
+                />
+              )}
             </Group>
           </Box>
         </Group>
@@ -188,7 +185,7 @@ const CryptoCard = ({
               size="xs" 
               color="green" 
               variant="light"
-              className="pulse-live"
+              style={{ animation: 'pulse 2s infinite' }}
             >
               LIVE
             </Badge>
@@ -210,16 +207,6 @@ const CryptoCard = ({
           </Text>
         </Group>
       </Stack>
-
-      {/* Data Quality Warning */}
-      {dataWarning && (
-        <Group gap="xs" mb="md">
-          <IconAlertTriangle size={14} color={dataWarning.color} />
-          <Text size="xs" c={dataWarning.color}>
-            {dataWarning.message}
-          </Text>
-        </Group>
-      )}
 
       {/* Additional Metrics */}
       <Stack gap="xs">
@@ -250,15 +237,15 @@ const CryptoCard = ({
           </Group>
         )}
 
-        {/* Last Update with detailed info */}
-        <Group justify="space-between">
-          <Text size="xs" c="dimmed">Last Updated</Text>
-          <Tooltip label={`Source: ${source} | ${ageMinutes.toFixed(1)} minutes ago`}>
-            <Text size="xs" c="dimmed" style={{ cursor: 'help' }}>
-              {lastUpdated.toLocaleTimeString()}
+        {/* Last Update */}
+        {data.lastUpdated && (
+          <Group justify="space-between">
+            <Text size="xs" c="dimmed">Last Updated</Text>
+            <Text size="xs" c="dimmed">
+              {new Date(data.lastUpdated).toLocaleTimeString()}
             </Text>
-          </Tooltip>
-        </Group>
+          </Group>
+        )}
       </Stack>
 
       {/* Quick Alert Button */}

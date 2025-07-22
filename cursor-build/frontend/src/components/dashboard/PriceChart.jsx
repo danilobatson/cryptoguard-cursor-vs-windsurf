@@ -1,80 +1,77 @@
-import { 
-  Card, 
-  Group, 
-  Text, 
-  SegmentedControl, 
-  ActionIcon,
-  Stack,
-  Box,
+import {
+  Card,
+  Group,
+  Text,
   Badge,
+  ActionIcon,
   Tooltip,
+  Box,
+  Stack,
+  SegmentedControl,
   NumberFormatter
 } from '@mantine/core'
-import { LineChart, AreaChart, BarChart } from '@mantine/charts'
-import { 
-  IconChartLine, 
-  IconChartArea,
-  IconChartBar,
+import {
   IconTrendingUp,
   IconTrendingDown,
   IconMinus,
+  IconChartLine,
+  IconChartArea,
+  IconChartBar,
+  IconRefresh,
   IconMaximize,
-  IconRefresh
+  IconMinimize
 } from '@tabler/icons-react'
-import { useState, useEffect, useMemo } from 'react'
-import { formatChartData, getChartConfig, calculatePriceMetrics, generateSentimentData } from '../../utils/chartUtils'
-import useCryptoStore from '../../stores/useCryptoStore'
+import { useState } from 'react'
 
 const PriceChart = ({ symbol, data, isRealTime = false }) => {
-  const [timeframe, setTimeframe] = useState('24h')
   const [chartType, setChartType] = useState('area')
+  const [timeframe, setTimeframe] = useState('24h')
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const { addNotification } = useCryptoStore()
 
-  // Process chart data
-  const chartData = useMemo(() => formatChartData(data, symbol), [data, symbol])
-  const chartConfig = getChartConfig(symbol)
-  const priceMetrics = calculatePriceMetrics(chartData)
+  // Process data for chart metrics
+  const priceMetrics = data ? {
+    current: data.price || data.close || 0,
+    changePercent: data.percent_change_24h || 0,
+    high24h: data.price ? data.price * 1.05 : 0, // Mock high
+    low24h: data.price ? data.price * 0.95 : 0,  // Mock low
+    volume24h: data.volume_24h || data.volume || 0
+  } : null
 
-  // Auto-refresh chart data when real-time is active
-  useEffect(() => {
-    if (isRealTime) {
-      const interval = setInterval(() => {
-        console.log(`Updating ${symbol} chart data...`)
-      }, 60000)
-
-      return () => clearInterval(interval)
+  // Generate mock chart data based on current price
+  const generateChartData = () => {
+    if (!priceMetrics) return []
+    
+    const points = 24
+    const basePrice = priceMetrics.current
+    const data = []
+    
+    for (let i = 0; i < points; i++) {
+      const variation = (Math.random() - 0.5) * 0.1 // ±5% variation
+      const price = basePrice * (1 + variation)
+      data.push({
+        time: new Date(Date.now() - (points - i) * 60 * 60 * 1000).toISOString(),
+        price: price,
+        volume: priceMetrics.volume24h * (0.8 + Math.random() * 0.4)
+      })
     }
-  }, [isRealTime, symbol])
-
-  const handleChartTypeChange = (type) => {
-    setChartType(type)
-    addNotification({
-      type: 'info',
-      title: 'Chart Updated',
-      message: `Switched to ${type} chart view`
-    })
+    return data
   }
 
-  const handleTimeframeChange = (newTimeframe) => {
-    setTimeframe(newTimeframe)
-    addNotification({
-      type: 'info',
-      title: 'Timeframe Changed',
-      message: `Now showing ${newTimeframe} data`
-    })
+  const chartData = generateChartData()
+
+  const handleChartTypeChange = (value) => {
+    setChartType(value)
+  }
+
+  const handleTimeframeChange = (value) => {
+    setTimeframe(value)
   }
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen)
-    addNotification({
-      type: 'info',
-      title: isFullscreen ? 'Fullscreen Disabled' : 'Fullscreen Enabled',
-      message: `Chart view ${isFullscreen ? 'minimized' : 'maximized'}`
-    })
   }
 
-    const renderChart = () => {
+  const renderChart = () => {
     if (!chartData || chartData.length === 0) {
       return (
         <div style={{ 
@@ -83,7 +80,7 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          background: 'rgba(255, 255, 255, 0.05)',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
           borderRadius: '8px',
           border: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
@@ -96,7 +93,7 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
       <div style={{ 
         height: isFullscreen ? 400 : 260, 
         width: '100%',
-        background: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
         borderRadius: '8px',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         display: 'flex',
@@ -137,9 +134,9 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
   return (
     <Card 
       withBorder
-      className={isRealTime ? "crypto-pulse" : ""}
+      className={isRealTime ? "pulse-live" : ""}
       style={{ 
-        background: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
         border: '1px solid rgba(255, 255, 255, 0.1)'
       }}
     >
@@ -167,18 +164,18 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
           {/* Chart Controls */}
           <Group gap="xs">
             <Tooltip label="Refresh chart">
-              <ActionIcon className="icon-spin" variant="light" color="gray" size="sm">
+              <ActionIcon variant="light" color="gray" size="sm">
                 <IconRefresh size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={isFullscreen ? 'Minimize' : 'Fullscreen'}>
-              <ActionIcon className="icon-spin" 
+              <ActionIcon 
                 variant="light" 
                 color="blue" 
                 size="sm"
                 onClick={toggleFullscreen}
               >
-                <IconMaximize size={16} />
+                {isFullscreen ? <IconMinimize size={16} /> : <IconMaximize size={16} />}
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -236,10 +233,9 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
 
         {/* Chart Display */}
         <Box style={{ 
-    minHeight: isFullscreen ? 400 : 260, 
-    width: '100%', 
-    height: isFullscreen ? 400 : 260 
-  }}>
+          minHeight: isFullscreen ? 400 : 260, 
+          width: '100%'
+        }}>
           {renderChart()}
         </Box>
 
@@ -294,8 +290,8 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
         {/* Real-time Indicator */}
         {isRealTime && (
           <Group justify="center">
-            <Badge variant="dot" color="green" size="sm" className="crypto-pulse">
-              Live updates every 60 seconds
+            <Badge variant="dot" color="green" size="sm" className="pulse-live">
+              Live updates every 3 seconds
             </Badge>
           </Group>
         )}

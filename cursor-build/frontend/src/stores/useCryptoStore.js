@@ -11,16 +11,19 @@ const useCryptoStore = create(
       errors: {},
       notifications: [],
       
-      // Real-time control (existing)
+      // Real-time control
       isRealTimeActive: false,
       refreshInterval: 30000,
       
-      // NEW: WebSocket state
+      // WebSocket state
       wsConnection: null,
-      connectionStatus: 'disconnected', // 'connecting', 'connected', 'error', 'disconnected'
+      connectionStatus: 'disconnected',
       lastUpdate: null,
       wsErrors: [],
       reconnectAttempts: 0,
+      
+      // NEW: Data freshness tracking
+      dataFreshness: {},
       
       // Existing actions
       setCryptoData: (symbol, data) =>
@@ -30,7 +33,16 @@ const useCryptoStore = create(
             [symbol]: {
               ...data,
               lastUpdated: new Date().toISOString(),
-              source: 'websocket' // NEW: Track data source
+              source: data.source || 'api'
+            }
+          },
+          // Track data freshness
+          dataFreshness: {
+            ...state.dataFreshness,
+            [symbol]: {
+              lastUpdated: new Date().toISOString(),
+              source: data.source || 'api',
+              isStale: data.source === 'api' && state.isRealTimeActive
             }
           }
         })),
@@ -58,22 +70,22 @@ const useCryptoStore = create(
             {
               id: Date.now(),
               timestamp: new Date().toISOString(),
+              shown: false,
               ...notification
             },
-            ...state.notifications.slice(0, 9) // Keep last 10
+            ...state.notifications.slice(0, 9)
           ]
         })),
 
       clearNotifications: () => set({ notifications: [] }),
 
-      // Enhanced real-time actions with WebSocket support
+      // Enhanced real-time actions with better error messaging
       startRealTime: async () => {
         const state = get()
         
         try {
           console.log('🚀 Starting WebSocket real-time updates...')
           
-          // Connect to WebSocket service
           await webSocketService.connect(['bitcoin', 'ethereum'])
           
           set({
@@ -82,7 +94,6 @@ const useCryptoStore = create(
             wsErrors: []
           })
           
-          // Add success notification
           state.addNotification({
             type: 'success',
             title: '🔴 LIVE: Real-time WebSocket Active',
@@ -98,9 +109,9 @@ const useCryptoStore = create(
           })
           
           state.addNotification({
-            type: 'error',
-            title: 'WebSocket Connection Failed',
-            message: 'Falling back to polling mode. Check connection.'
+            type: 'warning',
+            title: 'Using API Data',
+            message: 'WebSocket unavailable. Showing latest API data (may be 1-2 minutes old)'
           })
         }
       },
@@ -116,12 +127,11 @@ const useCryptoStore = create(
         
         get().addNotification({
           type: 'info',
-          title: '⏸️ PAUSED: Real-time Updates Stopped',
-          message: 'WebSocket disconnected. Click LIVE to resume.'
+          title: '⏸️ PAUSED: Showing API Data',
+          message: 'Real-time stopped. Data from last API call (may be 1-2 minutes old)'
         })
       },
 
-      // NEW: WebSocket-specific actions
       connectWebSocket: async (symbols = ['bitcoin', 'ethereum']) => {
         const state = get()
         
@@ -148,7 +158,6 @@ const useCryptoStore = create(
         const state = get()
         console.log('📡 WebSocket data received:', Object.keys(cryptoData))
         
-        // Update each crypto symbol
         Object.entries(cryptoData).forEach(([symbol, data]) => {
           state.setCryptoData(symbol, {
             ...data,
@@ -156,7 +165,6 @@ const useCryptoStore = create(
             realtimeUpdate: true
           })
           
-          // Clear any loading states
           state.setLoading(symbol, false)
           state.clearError(symbol)
         })
@@ -174,7 +182,6 @@ const useCryptoStore = create(
           lastUpdate: statusData.timestamp
         })
         
-        // Handle reconnection attempts
         if (statusData.status === 'error') {
           const state = get()
           set({
@@ -183,7 +190,30 @@ const useCryptoStore = create(
         }
       },
 
-      // NEW: WebSocket connection health
+      // NEW: Get data freshness info
+      getDataFreshness: () => {
+        const state = get()
+        const freshness = {}
+        
+        Object.entries(state.cryptoData).forEach(([symbol, data]) => {
+          if (data) {
+            const lastUpdated = new Date(data.lastUpdated || Date.now())
+            const ageMinutes = (Date.now() - lastUpdated.getTime()) / 60000
+            const isStale = ageMinutes > 2 // Consider stale if > 2 minutes
+            
+            freshness[symbol] = {
+              lastUpdated: data.lastUpdated,
+              source: data.source || 'unknown',
+              ageMinutes: ageMinutes,
+              isStale: isStale,
+              status: isStale ? 'stale' : ageMinutes < 0.5 ? 'fresh' : 'recent'
+            }
+          }
+        })
+        
+        return freshness
+      },
+
       getConnectionHealth: () => {
         const state = get()
         const wsStatus = webSocketService.getStatus()
@@ -198,7 +228,6 @@ const useCryptoStore = create(
         }
       },
 
-      // NEW: Force WebSocket data refresh
       forceWebSocketRefresh: () => {
         if (webSocketService.getStatus().connected) {
           webSocketService.forceRefresh()
@@ -211,7 +240,6 @@ const useCryptoStore = create(
         }
       },
 
-      // Enhanced refresh with WebSocket fallback
       setRefreshInterval: (interval) => set({ refreshInterval: interval }),
     }),
     {
@@ -219,10 +247,14 @@ const useCryptoStore = create(
       partialize: (state) => ({
         cryptoData: state.cryptoData,
         refreshInterval: state.refreshInterval,
-        // Don't persist WebSocket connection state
       })
     }
   )
 )
+
+// Expose store to window for testing
+if (typeof window !== 'undefined') {
+  window.useCryptoStore = useCryptoStore
+}
 
 export default useCryptoStore

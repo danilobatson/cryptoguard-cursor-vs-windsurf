@@ -9,10 +9,9 @@ class WebSocketService {
     this.connectionStatus = 'disconnected';
     this.lastPing = null;
     this.pingInterval = null;
-    this.isDestroyed = false; // NEW: Track if service is destroyed
+    this.isDestroyed = false;
   }
 
-  // Connect to WebSocket server
   connect(symbols = ['bitcoin', 'ethereum']) {
     if (this.isDestroyed) {
       return Promise.reject(new Error('Service has been destroyed'));
@@ -59,7 +58,6 @@ class WebSocketService {
           this.stopHeartbeat();
           this.notifyStatusChange();
           
-          // Only attempt reconnection if not destroyed and not intentional close
           if (!this.isDestroyed && event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.attemptReconnect(symbols);
           }
@@ -168,7 +166,7 @@ class WebSocketService {
   }
 
   attemptReconnect(symbols) {
-    if (this.isDestroyed) return; // Don't reconnect if destroyed
+    if (this.isDestroyed) return;
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
@@ -176,7 +174,7 @@ class WebSocketService {
     console.log(`Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms...`);
     
     setTimeout(() => {
-      if (!this.isDestroyed) { // Check again before reconnecting
+      if (!this.isDestroyed) {
         this.connect(symbols).catch(() => {
           console.error('Reconnection attempt failed');
         });
@@ -209,7 +207,6 @@ class WebSocketService {
     this.notifyStatusChange();
   }
 
-  // NEW: Destroy method to completely stop the service
   destroy() {
     this.isDestroyed = true;
     this.disconnect();
@@ -217,7 +214,7 @@ class WebSocketService {
   }
 }
 
-// Smart service that switches to mock in development
+// Smart service with configurable mock usage
 class SmartWebSocketService {
   constructor() {
     this.realService = new WebSocketService()
@@ -225,9 +222,30 @@ class SmartWebSocketService {
     this.currentService = this.realService
     this.isDevelopmentMode = import.meta.env.DEV
     this.hasTriedReal = false
+    this.forceRealMode = false // NEW: Force real WebSocket testing
+  }
+
+  // NEW: Method to disable mock for testing
+  setTestMode(useRealOnly = true) {
+    this.forceRealMode = useRealOnly
+    console.log(`🧪 Test mode: ${useRealOnly ? 'Real WebSocket only' : 'Smart fallback'}`)
   }
 
   async connect(symbols) {
+    // If in test mode, only try real WebSocket
+    if (this.forceRealMode) {
+      try {
+        await this.realService.connect(symbols)
+        this.currentService = this.realService
+        console.log('🌐 Test mode: Using real WebSocket only')
+      } catch (error) {
+        console.log('❌ Test mode: Real WebSocket failed:', error.message)
+        throw error // Don't fallback in test mode
+      }
+      return
+    }
+
+    // Normal smart fallback logic
     if (this.isDevelopmentMode && !this.hasTriedReal) {
       this.hasTriedReal = true
       
@@ -238,10 +256,8 @@ class SmartWebSocketService {
       } catch (error) {
         console.log('🧪 Real WebSocket failed, switching to mock service for development')
         
-        // Destroy the real service to stop reconnection attempts
         this.realService.destroy()
         
-        // Import and use mock service
         const { default: mockWebSocketService } = await import('./MockWebSocketService.js')
         this.mockService = mockWebSocketService
         this.currentService = this.mockService
@@ -249,14 +265,12 @@ class SmartWebSocketService {
         await this.mockService.connect(symbols)
       }
     } else if (!this.isDevelopmentMode) {
-      // Production: only use real WebSocket
       await this.realService.connect(symbols)
       this.currentService = this.realService
     }
-    // If we've already tried and switched to mock, don't try again
   }
 
-  // Proxy all methods to current service
+  // Proxy methods
   subscribe(symbol) { return this.currentService.subscribe(symbol) }
   on(event, callback) { return this.currentService.on(event, callback) }
   off(event, callback) { return this.currentService.off(event, callback) }
@@ -270,4 +284,10 @@ class SmartWebSocketService {
 }
 
 const webSocketService = new SmartWebSocketService()
+
+// Expose for testing
+if (typeof window !== 'undefined') {
+  window.webSocketService = webSocketService
+}
+
 export default webSocketService
