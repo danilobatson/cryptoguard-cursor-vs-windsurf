@@ -7,7 +7,7 @@ A sophisticated real-time cryptocurrency alert system built twice to determine t
 [![Mantine](https://img.shields.io/badge/Mantine-7-blue?logo=mantine)](https://mantine.dev/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-Workers-orange?logo=cloudflare)](https://workers.cloudflare.com/)
 [![LunarCrush](https://img.shields.io/badge/LunarCrush-API-purple)](https://lunarcrush.com/)
-[![Live Demo](https://img.shields.io/badge/Live-Demo-green)](https://cryptoguard-frontend.pages.dev/)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-green)](https://cryptoguard.pages.dev//)
 
 ## 🎯 Portfolio Highlights
 
@@ -25,7 +25,7 @@ A sophisticated real-time cryptocurrency alert system built twice to determine t
 ## 🚀 Live Demo
 
 ### **Production Deployments**
-- **🏆 Cursor Build**: [Live Demo](https://cryptoguard-frontend.pages.dev/) *(Current Winner)*
+- **🏆 Cursor Build**: [Live Demo](https://cryptoguard.pages.dev//) *(Current Winner)*
 - **🥊 Windsurf Build**: Coming Soon - Battle in Progress
 - **📊 Backend API**: [API Explorer](https://cryptoguard-api.cryptoguard-api.workers.dev/docs)
 
