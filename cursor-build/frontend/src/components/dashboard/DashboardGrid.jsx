@@ -13,6 +13,8 @@ import {
 	Switch,
 	Tabs,
 	NumberFormatter,
+	Alert,
+	Progress
 } from '@mantine/core';
 import {
 	IconSettings,
@@ -26,6 +28,8 @@ import {
 	IconCards,
 	IconPlus,
 	IconAlertTriangle,
+	IconWifi,
+	IconInfoCircle
 } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import CryptoCard from './CryptoCard';
@@ -35,6 +39,9 @@ import { useMultipleCrypto } from '../../hooks/useCryptoData';
 import useCryptoStore from '../../stores/useCryptoStore';
 import useAlertStore from '../../stores/useAlertStore';
 import HeroSection from './HeroSection';
+import ConnectionStatus from '../ui/ConnectionStatus';
+import RealTimeIndicator from '../ui/RealTimeIndicator';
+import { useConnectionStatus } from '../../hooks/useWebSocket';
 
 const DashboardGrid = () => {
 	const [activeTab, setActiveTab] = useState('overview');
@@ -47,6 +54,8 @@ const DashboardGrid = () => {
 		setRefreshInterval,
 		notifications,
 		addNotification,
+		connectionStatus,
+		lastUpdate
 	} = useCryptoStore();
 
 	const { openAlertModal, checkAlerts, getActiveAlerts, getTriggeredAlerts } =
@@ -57,7 +66,13 @@ const DashboardGrid = () => {
 		isLoading,
 		refreshAll,
 		hasError,
+		isRealTime,
+		realTimeCount,
+		allRealTime
 	} = useMultipleCrypto(['bitcoin', 'ethereum']);
+
+	// WebSocket connection monitoring
+	const { isConnected, healthScore } = useConnectionStatus();
 
 	// Check alerts when crypto data updates
 	useEffect(() => {
@@ -69,7 +84,7 @@ const DashboardGrid = () => {
 				triggeredAlerts.forEach(({ alert, triggerData, currentPrice }) => {
 					addNotification({
 						type: 'warning',
-						title: '🚨 Alert Triggered!',
+						title: isRealTime ? '⚡ Real-time Alert!' : '🚨 Alert Triggered!',
 						message: `${
 							alert.title
 						} - ${alert.symbol.toUpperCase()} is now $${currentPrice.toLocaleString()}`,
@@ -77,25 +92,13 @@ const DashboardGrid = () => {
 				});
 			}
 		}
-	}, [cryptoData, checkAlerts, addNotification]);
+	}, [cryptoData, checkAlerts, addNotification, isRealTime]);
 
 	const handleToggleRealTime = () => {
 		if (isRealTimeActive) {
 			stopRealTime();
-			addNotification({
-				type: 'info',
-				title: 'Real-time Updates Paused',
-				message: 'Dashboard will show cached data only',
-			});
 		} else {
 			startRealTime();
-			addNotification({
-				type: 'success',
-				title: 'Real-time Updates Active',
-				message: `Dashboard will refresh every ${
-					refreshInterval / 1000
-				} seconds`,
-			});
 		}
 	};
 
@@ -116,352 +119,242 @@ const DashboardGrid = () => {
 		}
 	};
 
-	const handleIntervalChange = (value) => {
-		const newInterval = parseInt(value) * 1000;
-		setRefreshInterval(newInterval);
-		addNotification({
-			type: 'info',
-			title: 'Update Interval Changed',
-			message: `Dashboard will now refresh every ${value} seconds`,
-		});
+	const formatLastUpdate = () => {
+		if (!lastUpdate) return 'Never';
+		const date = new Date(lastUpdate);
+		return date.toLocaleTimeString();
 	};
 
-	const handleCreateAlert = (symbol, prefillData = {}) => {
-		const currentPrice = cryptoData[symbol]?.close || cryptoData[symbol]?.price;
-		openAlertModal(symbol, {
-			...prefillData,
-			targetValue: currentPrice ? Math.round(currentPrice * 1.05) : undefined,
-		});
+	// Real-time status for display
+	const getRealTimeStatus = () => {
+		if (isRealTime && isConnected) {
+			return {
+				active: true,
+				text: 'WebSocket Live',
+				color: 'green',
+				description: `Real-time updates active via WebSocket`
+			};
+		} else if (isRealTimeActive && !isConnected) {
+			return {
+				active: true,
+				text: 'Connecting...',
+				color: 'orange',
+				description: 'Attempting WebSocket connection'
+			};
+		} else {
+			return {
+				active: false,
+				text: 'Paused',
+				color: 'gray',
+				description: 'Real-time updates paused'
+			};
+		}
 	};
 
-	const activeAlerts = getActiveAlerts();
-	const triggeredAlerts = getTriggeredAlerts();
+	const realtimeStatus = getRealTimeStatus();
 
 	return (
-		<Stack gap='xl'>
-			{/* 🚀 HERO SECTION - Now properly included! */}
-			<HeroSection 
-				cryptoData={cryptoData}
-				isLoading={isLoading}
-				onCreateAlert={handleCreateAlert}
-			/>
-
-			{/* Dashboard Header */}
-			<Card withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)' }}>
-				<Group justify='space-between' align='center'>
-					<Group gap='md'>
-						<IconLayoutDashboard
-							size={24}
-							color='var(--mantine-color-bitcoin-6)'
-						/>
-						<Box>
-							<Text size='lg' fw={700} c='white'>
-								Market Overview
+		<Stack gap="lg">
+			{/* Enhanced Hero Section with WebSocket Status */}
+			<Card padding="xl" radius="md" style={{
+				background: 'rgba(255, 255, 255, 0.08)',
+				backdropFilter: 'blur(10px)',
+				border: '1px solid rgba(255, 255, 255, 0.1)'
+			}}>
+				<Group justify="space-between" align="center">
+					<Box>
+						<Group gap="md" align="center">
+							<Text size="xl" fw={700} c="white">
+								CryptoGuard Dashboard
 							</Text>
-							<Text size='sm' c='dimmed'>
-								Live cryptocurrency market data with interactive price charts
-							</Text>
-						</Box>
-					</Group>
+							<RealTimeIndicator 
+								isActive={realtimeStatus.active && isConnected}
+								label="LIVE"
+							/>
+						</Group>
+						<Text size="sm" c="dimmed" mt={4}>
+							{realtimeStatus.description} • Last update: {formatLastUpdate()}
+						</Text>
+					</Box>
 
-					{/* Dashboard Controls - Enhanced visual feedback */}
-					<Group gap='sm'>
-						<Badge
-							color={hasError ? 'red' : isLoading ? 'yellow' : 'green'}
-							variant='light'
-							leftSection={hasError ? '⚠️' : isLoading ? '⏳' : '✅'}>
-							{hasError ? 'Error' : isLoading ? 'Loading' : 'Live'}
-						</Badge>
+					<Group gap="md">
+						{/* Connection Status Component */}
+						<ConnectionStatus />
 
-						<Select
-							value={(refreshInterval / 1000).toString()}
-							onChange={handleIntervalChange}
-							data={[
-								{ value: '30', label: '30s' },
-								{ value: '60', label: '1m' },
-								{ value: '120', label: '2m' },
-								{ value: '300', label: '5m' },
-							]}
-							size='xs'
-							w={80}
-						/>
-
-						<Tooltip label='Manual refresh'>
-							<ActionIcon
-								variant='light'
-								color='blue'
-								size='lg'
-								onClick={handleRefreshAll}
-								loading={isLoading}>
-								<IconRefresh size={18} />
-							</ActionIcon>
-						</Tooltip>
-
-						<Tooltip
-							label={
-								isRealTimeActive
-									? 'Pause real-time updates'
-									: 'Start real-time updates'
-							}>
-							<ActionIcon
-								variant='light'
-								color={isRealTimeActive ? 'orange' : 'green'}
-								size='lg'
-								onClick={handleToggleRealTime}
-								style={{
-									backgroundColor: isRealTimeActive 
-										? 'rgba(255, 193, 7, 0.1)' 
-										: 'rgba(76, 175, 80, 0.1)'
-								}}>
-								{isRealTimeActive ? (
+						{/* Real-time Toggle */}
+						<Button
+							variant={isRealTimeActive ? 'light' : 'filled'}
+							color={isRealTimeActive ? 'red' : 'green'}
+							leftSection={
+								isRealTimeActive ? (
 									<IconPlayerPause size={18} />
 								) : (
 									<IconPlayerPlay size={18} />
-								)}
+								)
+							}
+							onClick={handleToggleRealTime}
+							size="md"
+						>
+							{isRealTimeActive ? 'PAUSE' : 'GO LIVE'}
+						</Button>
+
+						{/* Manual Refresh */}
+						<Tooltip label="Force refresh all data">
+							<ActionIcon
+								variant="light"
+								color="blue"
+								size="lg"
+								onClick={handleRefreshAll}
+								loading={isLoading}
+							>
+								<IconRefresh size={18} />
 							</ActionIcon>
 						</Tooltip>
 					</Group>
 				</Group>
+
+				{/* WebSocket Status Alert */}
+				{isRealTimeActive && !isConnected && (
+					<Alert 
+						icon={<IconInfoCircle size={16} />}
+						color="orange"
+						variant="light"
+						mt="md"
+					>
+						<Group justify="space-between">
+							<Text size="sm">
+								WebSocket connection in progress. Data will update automatically when connected.
+							</Text>
+							{healthScore !== undefined && (
+								<Progress value={healthScore} size="sm" w={100} />
+							)}
+						</Group>
+					</Alert>
+				)}
+
+				{/* Real-time Data Status */}
+				{isRealTime && isConnected && realTimeCount > 0 && (
+					<Alert 
+						icon={<IconWifi size={16} />}
+						color="green"
+						variant="light"
+						mt="md"
+					>
+						<Group justify="space-between">
+							<Text size="sm">
+								🔴 LIVE: Receiving real-time updates for {realTimeCount} cryptocurrencies via WebSocket
+							</Text>
+							<Badge color="green" variant="light">
+								{realTimeCount}/{Object.keys(cryptoData).length} Real-time
+							</Badge>
+						</Group>
+					</Alert>
+				)}
 			</Card>
 
-			{/* Navigation Tabs */}
-			<Tabs value={activeTab} onChange={setActiveTab} variant='pills'>
-				<Tabs.List grow>
-					<Tabs.Tab value='overview' leftSection={<IconCards size={16} />}>
+			{/* Tabs Navigation */}
+			<Tabs value={activeTab} onChange={setActiveTab}>
+				<Tabs.List>
+					<Tabs.Tab
+						value="overview"
+						leftSection={<IconLayoutDashboard size={16} />}
+					>
 						Overview
 					</Tabs.Tab>
-					<Tabs.Tab value='charts' leftSection={<IconChartLine size={16} />}>
+					<Tabs.Tab
+						value="charts"
+						leftSection={<IconTrendingUp size={16} />}
+					>
 						Charts
 					</Tabs.Tab>
 					<Tabs.Tab
-						value='alerts'
+						value="alerts"
 						leftSection={<IconBell size={16} />}
-						rightSection={
-							activeAlerts.length > 0 ? (
-								<Badge size='sm' color='bitcoin' variant='filled'>
-									{activeAlerts.length}
-								</Badge>
-							) : null
-						}>
-						Alerts
+					>
+						Alerts ({getActiveAlerts().length})
 					</Tabs.Tab>
 				</Tabs.List>
 
-				{/* Overview Tab - Main Dashboard */}
-				<Tabs.Panel value='overview' pt='xl'>
-					<Grid gutter='xl'>
-						{/* Bitcoin Card */}
-						<Grid.Col className='hero-section' span={{ base: 12, md: 6 }}>
-							<CryptoCard
-								symbol='bitcoin'
-								data={cryptoData.bitcoin}
-								isLoading={isLoading}
-								isRealTime={isRealTimeActive}
-								variant='detailed'
-								onAddAlert={(symbol, data) => {
-									handleCreateAlert(symbol, {
-										title: `${data.name} Price Alert`,
-										type: 'price_above',
-									});
-								}}
-								onViewChart={(symbol) => {
-									setActiveTab('charts');
-									addNotification({
-										type: 'success',
-										title: 'Chart View',
-										message: `Switched to ${symbol} price chart`,
-									});
-								}}
-							/>
-						</Grid.Col>
+				{/* Overview Tab */}
+				<Tabs.Panel value="overview" pt="md">
+					<Stack gap="lg">
+						{/* Hero Section */}
+						<HeroSection />
 
-						{/* Ethereum Card */}
-						<Grid.Col className='hero-section' span={{ base: 12, md: 6 }}>
-							<CryptoCard
-								symbol='ethereum'
-								data={cryptoData.ethereum}
-								isLoading={isLoading}
-								isRealTime={isRealTimeActive}
-								variant='detailed'
-								onAddAlert={(symbol, data) => {
-									handleCreateAlert(symbol, {
-										title: `${data.name} Price Alert`,
-										type: 'price_above',
-									});
-								}}
-								onViewChart={(symbol) => {
-									setActiveTab('charts');
-									addNotification({
-										type: 'success',
-										title: 'Chart View',
-										message: `Switched to ${symbol} price chart`,
-									});
-								}}
-							/>
-						</Grid.Col>
-
-						{/* Quick Stats Row */}
-						<Grid.Col span={12}>
-							<Group grow>
-								<Card
-									withBorder
-									style={{
-										backgroundColor: 'rgba(76, 175, 80, 0.1)',
-										textAlign: 'center',
-									}}>
-									<Text size='xs' c='dimmed'>
-										Portfolio Value
-									</Text>
-									<Text size='lg' fw={700} c='green'>
-										<NumberFormatter
-											value={
-												(cryptoData?.bitcoin?.close || 0) +
-												(cryptoData?.ethereum?.close || 0)
-											}
-											prefix='$'
-											thousandSeparator
-											decimalScale={2}
-										/>
-									</Text>
-									<Text size='xs' c='dimmed'>
-										{(
-											((cryptoData?.bitcoin?.percent_change_24h || 0) +
-												(cryptoData?.ethereum?.percent_change_24h || 0)) /
-											2
-										).toFixed(2)}
-										%
-									</Text>
-								</Card>
-
-								<Card
-									withBorder
-									style={{
-										backgroundColor: 'rgba(33, 150, 243, 0.1)',
-										textAlign: 'center',
-									}}>
-									<Text size='xs' c='dimmed'>
-										Active Alerts
-									</Text>
-									<Text size='lg' fw={700} c='blue'>
-										{activeAlerts.length}
-									</Text>
-									<Text size='xs' c='dimmed'>
-										{triggeredAlerts.length} triggered today
-									</Text>
-								</Card>
-
-								<Card
-									withBorder
-									style={{
-										backgroundColor: 'rgba(255, 193, 7, 0.1)',
-										textAlign: 'center',
-									}}>
-									<Text size='xs' c='dimmed'>
-										Data Status
-									</Text>
-									<Text size='lg' fw={700} c='bitcoin'>
-										{isRealTimeActive ? 'LIVE' : 'PAUSED'}
-									</Text>
-									<Text size='xs' c='dimmed'>
-										Last update: {new Date().toLocaleTimeString()}
-									</Text>
-								</Card>
-							</Group>
-						</Grid.Col>
-
-						{/* Action Cards Row */}
-						<Grid.Col span={12}>
-							<Group grow>
-								<Card
-									withBorder
-									style={{
-										backgroundColor: 'rgba(247, 147, 26, 0.1)',
-										textAlign: 'center',
-										cursor: 'pointer',
-									}}
-									onClick={() => handleCreateAlert('bitcoin')}>
-									<IconBell size={32} color='var(--mantine-color-bitcoin-6)' />
-									<Text size='sm' fw={500} mt='xs'>
-										Set Alert
-									</Text>
-									<Text size='xs' c='dimmed'>
-										Create price or change alerts
-									</Text>
-								</Card>
-
-								<Card
-									withBorder
-									style={{
-										backgroundColor: 'rgba(33, 150, 243, 0.1)',
-										textAlign: 'center',
-										cursor: 'pointer',
-									}}
-									onClick={() => setActiveTab('alerts')}>
-									<IconAlertTriangle
-										size={32}
-										color='var(--mantine-color-blue-6)'
+						{/* Crypto Cards Grid */}
+						<Grid>
+							{Object.entries(cryptoData).map(([symbol, data]) => (
+								<Grid.Col key={symbol} span={{ base: 12, md: 6 }}>
+									<CryptoCard
+										symbol={symbol}
+										data={data}
+										isRealTime={data?.source === 'websocket'}
+										showRealTimeIndicator={true}
 									/>
-									<Text size='sm' fw={500} mt='xs'>
-										View Alerts
-									</Text>
-									<Text size='xs' c='dimmed'>
-										Manage your alert center
-									</Text>
-								</Card>
+								</Grid.Col>
+							))}
+						</Grid>
 
-								<Card
-									withBorder
-									style={{
-										backgroundColor: 'rgba(76, 175, 80, 0.1)',
-										textAlign: 'center',
-										cursor: 'pointer',
-									}}
-									onClick={() => {
-										addNotification({
-											type: 'info',
-											title: 'Portfolio Features',
-											message:
-												'Advanced portfolio tracking coming in next update!',
-										});
-									}}>
-									<IconTrendingUp
-										size={32}
-										color='var(--mantine-color-green-6)'
-									/>
-									<Text size='sm' fw={500} mt='xs'>
-										Portfolio
+						{/* Quick Actions */}
+						<Card
+							padding="lg"
+							radius="md"
+							style={{
+								background: 'rgba(255, 255, 255, 0.08)',
+								backdropFilter: 'blur(10px)',
+								border: '1px solid rgba(255, 255, 255, 0.1)',
+							}}
+						>
+							<Group justify="space-between" align="center">
+								<Box>
+									<Text fw={600} c="white">
+										Quick Actions
 									</Text>
-									<Text size='xs' c='dimmed'>
-										Track your holdings
+									<Text size="sm" c="dimmed">
+										Set up alerts and manage your watchlist
 									</Text>
-								</Card>
+								</Box>
+
+								<Group gap="md">
+									<Button
+										leftSection={<IconPlus size={16} />}
+										variant="light"
+										color="orange"
+										onClick={openAlertModal}
+									>
+										Create Alert
+									</Button>
+
+									<Button
+										leftSection={<IconSettings size={16} />}
+										variant="light"
+										color="gray"
+									>
+										Settings
+									</Button>
+								</Group>
 							</Group>
-						</Grid.Col>
-					</Grid>
+						</Card>
+					</Stack>
 				</Tabs.Panel>
 
 				{/* Charts Tab */}
-				<Tabs.Panel value='charts' pt='xl'>
-					<Grid gutter='xl'>
-						<Grid.Col span={12}>
-							<PriceChart
-								symbol='bitcoin'
-								data={cryptoData.bitcoin}
-								isLoading={isLoading}
-							/>
-						</Grid.Col>
-						<Grid.Col span={12}>
-							<PriceChart
-								symbol='ethereum'
-								data={cryptoData.ethereum}
-								isLoading={isLoading}
-							/>
-						</Grid.Col>
+				<Tabs.Panel value="charts" pt="md">
+					<Grid>
+						{Object.entries(cryptoData).map(([symbol, data]) => (
+							<Grid.Col key={symbol} span={{ base: 12, lg: 6 }}>
+								<PriceChart
+									symbol={symbol}
+									data={data}
+									isRealTime={data?.source === 'websocket'}
+								/>
+							</Grid.Col>
+						))}
 					</Grid>
 				</Tabs.Panel>
 
 				{/* Alerts Tab */}
-				<Tabs.Panel value='alerts' pt='xl'>
+				<Tabs.Panel value="alerts" pt="md">
 					<AlertsList />
 				</Tabs.Panel>
 			</Tabs>

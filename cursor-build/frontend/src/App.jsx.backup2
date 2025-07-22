@@ -16,7 +16,9 @@ import {
   IconBell,
   IconSettings,
   IconBrandGithub,
-  IconExternalLink
+  IconExternalLink,
+  IconWifi,
+  IconWifiOff
 } from '@tabler/icons-react'
 import DashboardGrid from './components/dashboard/DashboardGrid'
 import AlertModal from './components/alerts/AlertModal'
@@ -24,11 +26,11 @@ import useCryptoStore from './stores/useCryptoStore'
 import useAlertStore from './stores/useAlertStore'
 import useNotifications from './hooks/useNotifications.jsx'
 import useAlertInitialization from './hooks/useAlertInitialization'
-import ConnectionStatus from './components/ui/ConnectionStatus'
+import { useConnectionStatus } from './hooks/useWebSocket'
 
 function App() {
-  const { notifications, addNotification } = useCryptoStore()
-  const { getActiveAlerts } = useAlertStore()
+  const { notifications, addNotification, connectionStatus } = useCryptoStore()
+  const { getActiveAlerts, getTriggeredAlerts } = useAlertStore()
 
   // Initialize notification system
   useNotifications()
@@ -36,13 +38,16 @@ function App() {
   // Initialize alert system with persistence
   const { isInitialized, activeAlertsCount } = useAlertInitialization()
 
+  // NEW: WebSocket connection monitoring
+  const { isConnected, status, healthScore, reconnectAttempts } = useConnectionStatus()
+
   // Welcome notification on first load
   useEffect(() => {
     const timer = setTimeout(() => {
       addNotification({
         type: 'success',
-        title: '🚀 CryptoGuard v5.3 Active!',
-        message: 'Real-time WebSocket integration ready. Click GO LIVE for instant updates!'
+        title: '🚀 CryptoGuard Active!',
+        message: 'Real-time crypto data and alert system ready. Click LIVE for WebSocket updates!'
       })
     }, 1000)
 
@@ -53,16 +58,30 @@ function App() {
     addNotification({
       type: 'info',
       title: 'Alert System Active',
-      message: 'Click "Set Alert" on any crypto card or visit the Alerts tab!'
+      message: 'Click "Set Alert" in the dashboard or visit the Alerts tab to create price alerts!'
     })
   }
 
   const handleViewGitHub = () => {
     addNotification({
       type: 'info',
-      title: 'Cursor vs Windsurf IDE Battle',
-      message: 'Source code available after the AI IDE comparison is complete!'
+      title: 'Source Code',
+      message: 'GitHub repository will be available after the Cursor vs Windsurf IDE battle!'
     })
+  }
+
+  // NEW: Connection status indicator
+  const getConnectionIcon = () => {
+    if (isConnected) return <IconWifi size={16} color="green" />
+    if (status === 'connecting') return <IconWifi size={16} color="orange" />
+    return <IconWifiOff size={16} color="gray" />
+  }
+
+  const getConnectionText = () => {
+    if (isConnected) return 'WebSocket Connected'
+    if (status === 'connecting') return 'Connecting...'
+    if (status === 'error') return `Connection Error (${reconnectAttempts} retries)`
+    return 'Disconnected'
   }
 
   return (
@@ -90,13 +109,27 @@ function App() {
                   CryptoGuard
                 </Title>
                 <Text size="xs" c="dimmed">
-                  Real-time WebSocket Alert System
+                  Real-time Crypto Alert System
                 </Text>
               </Box>
             </Group>
 
-            {/* Center Section - Connection Status */}
-            <ConnectionStatus />
+            {/* Center Section - NEW: Connection Status */}
+            <Group gap="lg">
+              <Tooltip label={getConnectionText()} position="bottom">
+                <Group gap="xs">
+                  {getConnectionIcon()}
+                  <Text size="sm" c={isConnected ? 'green' : 'dimmed'}>
+                    {isConnected ? 'LIVE' : status.toUpperCase()}
+                  </Text>
+                  {healthScore && (
+                    <Badge size="xs" variant="light" color={isConnected ? 'green' : 'gray'}>
+                      {healthScore}%
+                    </Badge>
+                  )}
+                </Group>
+              </Tooltip>
+            </Group>
 
             {/* Right Section */}
             <Group gap="md">
@@ -149,8 +182,8 @@ function App() {
                 </ActionIcon>
               </Tooltip>
 
-              {/* Portfolio */}
-              <Tooltip label="My Portfolio" position="bottom">
+              {/* External Link */}
+              <Tooltip label="Portfolio" position="bottom">
                 <ActionIcon
                   component="a"
                   href="https://danilobatson.github.io/"
