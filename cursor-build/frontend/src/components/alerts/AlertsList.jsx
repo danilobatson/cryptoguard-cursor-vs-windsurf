@@ -469,7 +469,6 @@ const AlertsList = () => {
 				</Grid.Col>
 			</Grid>
 
-
 			{/* Data Source Warning */}
 			{(!cryptoData || Object.keys(cryptoData).length === 0) && (
 				<Alert color='orange' variant='light'>

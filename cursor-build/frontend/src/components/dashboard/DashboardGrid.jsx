@@ -66,9 +66,7 @@ const DashboardGrid = () => {
 		hasError,
 	} = useMultipleCrypto(['bitcoin', 'ethereum']);
 
-	// console.log removed to reduce spam
-
-	// Updated: Polling-based status instead of WebSocket
+		// Updated: Polling-based status instead of WebSocket
 	const isConnected = !hasError && Object.keys(cryptoData).length > 0;
 	const isPollingActive = isRealTimeActive;
 	const activeDataCount = Object.values(cryptoData).filter(
