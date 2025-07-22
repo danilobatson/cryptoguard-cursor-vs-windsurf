@@ -20,7 +20,7 @@ import {
 } from '@tabler/icons-react'
 import DashboardGrid from './components/dashboard/DashboardGrid'
 import useCryptoStore from './stores/useCryptoStore'
-import useNotifications from './hooks/useNotifications'
+import useNotifications from './hooks/useNotifications.jsx'
 
 function App() {
   const { notifications, addNotification } = useCryptoStore()
