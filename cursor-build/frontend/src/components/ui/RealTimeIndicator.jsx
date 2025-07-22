@@ -1,11 +1,5 @@
-import { Box, Group, Text, keyframes } from '@mantine/core'
+import { Box, Group, Text } from '@mantine/core'
 import { IconCircle } from '@tabler/icons-react'
-
-const pulse = keyframes`
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.1); }
-  100% { opacity: 1; transform: scale(1); }
-`
 
 const RealTimeIndicator = ({ 
   isActive = false, 
@@ -18,12 +12,7 @@ const RealTimeIndicator = ({
   return (
     <Group gap="xs" align="center">
       {showIcon && (
-        <Box
-          style={{
-            animation: `${pulse} 2s infinite`,
-            color: '#ff4444'
-          }}
-        >
+        <Box className="pulse-dot">
           <IconCircle size={size === 'sm' ? 8 : 12} fill="currentColor" />
         </Box>
       )}
@@ -32,8 +21,8 @@ const RealTimeIndicator = ({
         size={size} 
         fw={600} 
         c="red"
+        className="pulse-live"
         style={{
-          animation: `${pulse} 2s infinite`,
           textTransform: 'uppercase',
           letterSpacing: '0.5px'
         }}

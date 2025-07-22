@@ -431,3 +431,28 @@ html, body {
 .hero-section .stagger-item:nth-child(2) { animation-delay: 0.4s; }
 .hero-section .stagger-item:nth-child(3) { animation-delay: 0.6s; }
 .hero-section .stagger-item:nth-child(4) { animation-delay: 0.8s; }
+
+/* Real-time pulse animation */
+@keyframes pulse-animation {
+  0% { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 0.6; 
+    transform: scale(1.1); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+.pulse-live {
+  animation: pulse-animation 2s infinite;
+}
+
+.pulse-dot {
+  animation: pulse-animation 2s infinite;
+  color: #ff4444;
+}
