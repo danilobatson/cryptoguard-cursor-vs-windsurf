@@ -6,13 +6,18 @@ class WebSocketService {
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000;
     this.listeners = new Map();
-    this.connectionStatus = 'disconnected'; // 'connecting', 'connected', 'error', 'disconnected'
+    this.connectionStatus = 'disconnected';
     this.lastPing = null;
     this.pingInterval = null;
+    this.isDestroyed = false; // NEW: Track if service is destroyed
   }
 
   // Connect to WebSocket server
   connect(symbols = ['bitcoin', 'ethereum']) {
+    if (this.isDestroyed) {
+      return Promise.reject(new Error('Service has been destroyed'));
+    }
+
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       console.log('WebSocket already connected');
       return Promise.resolve();
@@ -23,7 +28,6 @@ class WebSocketService {
         this.connectionStatus = 'connecting';
         this.notifyStatusChange();
 
-        // Connect to your Cloudflare Worker WebSocket endpoint
         const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || 'wss://cryptoguard-worker.your-subdomain.workers.dev/ws';
         console.log('Connecting to WebSocket:', wsUrl);
         
@@ -35,12 +39,8 @@ class WebSocketService {
           this.reconnectAttempts = 0;
           this.notifyStatusChange();
           
-          // Subscribe to symbols
           symbols.forEach(symbol => this.subscribe(symbol));
-          
-          // Start ping/pong heartbeat
           this.startHeartbeat();
-          
           resolve();
         };
 
@@ -59,8 +59,8 @@ class WebSocketService {
           this.stopHeartbeat();
           this.notifyStatusChange();
           
-          // Attempt reconnection if not intentional
-          if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+          // Only attempt reconnection if not destroyed and not intentional close
+          if (!this.isDestroyed && event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.attemptReconnect(symbols);
           }
         };
@@ -72,7 +72,6 @@ class WebSocketService {
           reject(error);
         };
 
-        // Connection timeout
         setTimeout(() => {
           if (this.connectionStatus === 'connecting') {
             reject(new Error('WebSocket connection timeout'));
@@ -87,7 +86,6 @@ class WebSocketService {
     });
   }
 
-  // Subscribe to specific crypto updates
   subscribe(symbol) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       console.log(`📡 Subscribing to ${symbol} updates`);
@@ -98,35 +96,28 @@ class WebSocketService {
     }
   }
 
-  // Handle incoming messages
   handleMessage(data) {
     switch (data.type) {
       case 'crypto_update':
         this.notifyListeners('crypto_update', data.data);
         break;
-      
       case 'alert':
         this.notifyListeners('alert', data.alert);
         break;
-      
       case 'pong':
         this.lastPing = Date.now();
         break;
-      
       case 'subscribed':
         console.log('✅ Subscribed to:', data.symbol);
         break;
-      
       case 'error':
         console.error('WebSocket server error:', data.message);
         break;
-      
       default:
         console.log('Unknown message type:', data.type);
     }
   }
 
-  // Add event listener
   on(event, callback) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
@@ -134,7 +125,6 @@ class WebSocketService {
     this.listeners.get(event).add(callback);
   }
 
-  // Remove event listener
   off(event, callback) {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
@@ -142,7 +132,6 @@ class WebSocketService {
     }
   }
 
-  // Notify all listeners of an event
   notifyListeners(event, data) {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
@@ -156,7 +145,6 @@ class WebSocketService {
     }
   }
 
-  // Notify status change listeners
   notifyStatusChange() {
     this.notifyListeners('status_change', {
       status: this.connectionStatus,
@@ -164,16 +152,14 @@ class WebSocketService {
     });
   }
 
-  // Start heartbeat ping/pong
   startHeartbeat() {
     this.pingInterval = setInterval(() => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({ type: 'ping' }));
       }
-    }, 30000); // Ping every 30 seconds
+    }, 30000);
   }
 
-  // Stop heartbeat
   stopHeartbeat() {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
@@ -181,28 +167,29 @@ class WebSocketService {
     }
   }
 
-  // Attempt to reconnect
   attemptReconnect(symbols) {
+    if (this.isDestroyed) return; // Don't reconnect if destroyed
+
     this.reconnectAttempts++;
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1); // Exponential backoff
+    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
     
     console.log(`Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms...`);
     
     setTimeout(() => {
-      this.connect(symbols).catch(() => {
-        console.error('Reconnection attempt failed');
-      });
+      if (!this.isDestroyed) { // Check again before reconnecting
+        this.connect(symbols).catch(() => {
+          console.error('Reconnection attempt failed');
+        });
+      }
     }, delay);
   }
 
-  // Force refresh data
   forceRefresh() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: 'force_refresh' }));
     }
   }
 
-  // Get connection status
   getStatus() {
     return {
       status: this.connectionStatus,
@@ -212,7 +199,6 @@ class WebSocketService {
     };
   }
 
-  // Disconnect WebSocket
   disconnect() {
     this.stopHeartbeat();
     if (this.ws) {
@@ -223,31 +209,37 @@ class WebSocketService {
     this.notifyStatusChange();
   }
 
-  // Cleanup
+  // NEW: Destroy method to completely stop the service
   destroy() {
+    this.isDestroyed = true;
     this.disconnect();
     this.listeners.clear();
   }
 }
 
-// Auto-switch to mock in development if WebSocket fails
+// Smart service that switches to mock in development
 class SmartWebSocketService {
   constructor() {
     this.realService = new WebSocketService()
     this.mockService = null
     this.currentService = this.realService
     this.isDevelopmentMode = import.meta.env.DEV
+    this.hasTriedReal = false
   }
 
   async connect(symbols) {
-    if (this.isDevelopmentMode) {
+    if (this.isDevelopmentMode && !this.hasTriedReal) {
+      this.hasTriedReal = true
+      
       try {
-        // Try real WebSocket first
         await this.realService.connect(symbols)
         this.currentService = this.realService
         console.log('🌐 Using real WebSocket service')
       } catch (error) {
         console.log('🧪 Real WebSocket failed, switching to mock service for development')
+        
+        // Destroy the real service to stop reconnection attempts
+        this.realService.destroy()
         
         // Import and use mock service
         const { default: mockWebSocketService } = await import('./MockWebSocketService.js')
@@ -256,11 +248,12 @@ class SmartWebSocketService {
         
         await this.mockService.connect(symbols)
       }
-    } else {
+    } else if (!this.isDevelopmentMode) {
       // Production: only use real WebSocket
       await this.realService.connect(symbols)
       this.currentService = this.realService
     }
+    // If we've already tried and switched to mock, don't try again
   }
 
   // Proxy all methods to current service
@@ -270,9 +263,11 @@ class SmartWebSocketService {
   forceRefresh() { return this.currentService.forceRefresh() }
   getStatus() { return this.currentService.getStatus() }
   disconnect() { return this.currentService.disconnect() }
-  destroy() { return this.currentService.destroy() }
+  destroy() { 
+    if (this.realService) this.realService.destroy()
+    if (this.mockService) this.mockService.destroy()
+  }
 }
 
-// Create smart singleton instance that auto-switches
 const webSocketService = new SmartWebSocketService()
 export default webSocketService
