@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { 
-  AppShell, 
-  Group, 
-  Text, 
+import {
+  AppShell,
+  Group,
+  Text,
   Button,
   Container,
   Title,
@@ -11,9 +11,9 @@ import {
   Tooltip,
   ActionIcon
 } from '@mantine/core'
-import { 
-  IconCoin, 
-  IconBell, 
+import {
+  IconCoin,
+  IconBell,
   IconSettings,
   IconBrandGithub,
   IconExternalLink
@@ -24,7 +24,7 @@ import useNotifications from './hooks/useNotifications.jsx'
 
 function App() {
   const { notifications, addNotification } = useCryptoStore()
-  
+
   // Initialize notification system
   useNotifications()
 
@@ -34,7 +34,7 @@ function App() {
       addNotification({
         type: 'success',
         title: '🚀 CryptoGuard Active!',
-        message: 'Live crypto data dashboard with professional state management'
+        message: 'Live crypto data dashboard'
       })
     }, 1000)
 
@@ -68,9 +68,9 @@ function App() {
         <Container size="xl" h="100%">
           <Group h="100%" justify="space-between" align="center">
             <Group gap="md">
-              <IconCoin 
-                size={36} 
-                color="var(--mantine-color-bitcoin-6)" 
+              <IconCoin
+                size={36}
+                color="var(--mantine-color-bitcoin-6)"
                 className="crypto-pulse"
               />
               <Box>
@@ -82,12 +82,12 @@ function App() {
                 </Text>
               </Box>
             </Group>
-            
+
             <Group gap="md">
               {/* Live Status */}
-              <Badge 
-                color="green" 
-                variant="light" 
+              <Badge
+                color="green"
+                variant="light"
                 size="lg"
                 className="crypto-pulse"
                 leftSection="🟢"
@@ -130,9 +130,9 @@ function App() {
 
               {/* Settings */}
               <Tooltip label="Dashboard settings">
-                <ActionIcon 
-                  variant="light" 
-                  color="gray" 
+                <ActionIcon
+                  variant="light"
+                  color="gray"
                   size="lg"
                   onClick={() => addNotification({
                     type: 'info',
@@ -157,7 +157,7 @@ function App() {
               </Tooltip>
 
               {/* Main CTA */}
-              <Button 
+              <Button
                 leftSection={<IconBell size={18} />}
                 variant="gradient"
                 gradient={{ from: 'bitcoin', to: 'ethereum', deg: 45 }}

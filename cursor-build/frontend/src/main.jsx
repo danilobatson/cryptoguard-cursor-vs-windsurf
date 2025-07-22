@@ -63,7 +63,7 @@ const theme = createTheme({
         },
         control: {
           color: '#C1C2C5',
-          '&[data-active]': {
+          '&[dataActive]': {
             color: '#000000'
           }
         }

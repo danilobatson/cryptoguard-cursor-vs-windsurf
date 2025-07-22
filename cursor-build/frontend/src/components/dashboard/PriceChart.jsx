@@ -74,60 +74,40 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
     })
   }
 
-  const renderChart = () => {
-    const commonProps = {
-      h: isFullscreen ? 400 : 260,
-      w: '100%',
-      data: chartData,
-      dataKey: 'time',
-      withLegend: true,
-      withTooltip: true,
-      withDots: false,
-      curveType: 'monotone'
+    const renderChart = () => {
+    if (!chartData || chartData.length === 0) {
+      return (
+        <div style={{ 
+          height: isFullscreen ? 400 : 260, 
+          width: '100%', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <Text c="dimmed">Chart will render here</Text>
+        </div>
+      )
     }
 
-    switch (chartType) {
-      case 'line':
-        return (
-          <LineChart
-            {...commonProps}
-            series={[
-              { name: 'price', label: 'Price ($)', color: chartConfig.color },
-              { name: 'ma', label: '5-Hour MA', color: '#9E9E9E' }
-            ]}
-          />
-        )
-      case 'area':
-        return (
-          <AreaChart
-            {...commonProps}
-            series={[
-              { 
-                name: 'price', 
-                label: 'Price ($)', 
-                color: chartConfig.color,
-                strokeWidth: 2
-              }
-            ]}
-            fillOpacity={0.2}
-            strokeWidth={2}
-          />
-        )
-      case 'volume':
-        return (
-          <BarChart
-            h={isFullscreen ? 400 : 260}
-            data={chartData}
-            dataKey="time"
-            series={[
-              { name: 'volume', label: 'Volume', color: '#2196F3' }
-            ]}
-            withTooltip
-          />
-        )
-      default:
-        return null
-    }
+    return (
+      <div style={{ 
+        height: isFullscreen ? 400 : 260, 
+        width: '100%',
+        background: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: '8px',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Text c="white" size="sm">
+          {chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart - {symbol}
+        </Text>
+      </div>
+    )
   }
 
   const getPriceChangeIcon = () => {
