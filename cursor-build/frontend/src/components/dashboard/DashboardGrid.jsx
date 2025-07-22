@@ -276,7 +276,7 @@ const DashboardGrid = () => {
 				<Tabs.Panel value='overview' pt='md'>
 					<Stack gap='lg'>
 						{/* Hero Section */}
-						<HeroSection />
+            <HeroSection cryptoData={cryptoData} />
 
 						{/* Crypto Cards Grid */}
 						<Grid>
