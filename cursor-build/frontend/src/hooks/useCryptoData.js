@@ -2,11 +2,22 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { queryKeys, API_BASE } from '../lib/queryClient'
 import useCryptoStore from '../stores/useCryptoStore'
+import { useRealTimeData } from './useWebSocket'
 
-// Custom hook for fetching and managing crypto data
+// Enhanced crypto data hook with WebSocket integration
 export const useCryptoData = (symbol) => {
   const queryClient = useQueryClient()
-  const { setCryptoData, setLoading, setError, clearError } = useCryptoStore()
+  const { 
+    setCryptoData, 
+    setLoading, 
+    setError, 
+    clearError,
+    isRealTimeActive,
+    connectionStatus 
+  } = useCryptoStore()
+  
+  // Get real-time data from WebSocket
+  const { data: realtimeData, hasRealtimeData } = useRealTimeData([symbol])
   
   const query = useQuery({
     queryKey: queryKeys.crypto[symbol] || ['crypto', symbol],
@@ -20,17 +31,29 @@ export const useCryptoData = (symbol) => {
       }
       
       const result = await response.json()
-      console.log(`${symbol} data received:`, result)
+      console.log(`${symbol} API data received:`, result)
       
-      // Handle different API response structures
       return result?.data || result
     },
-    enabled: !!symbol, // Only run if symbol is provided
+    enabled: !!symbol,
+    // Disable polling when WebSocket is active and providing data
+    refetchInterval: (isRealTimeActive && connectionStatus === 'connected') 
+      ? false  // No polling when WebSocket active
+      : 120000, // 2 minutes when using API only
+    staleTime: (isRealTimeActive && connectionStatus === 'connected')
+      ? Infinity // WebSocket data never stale
+      : 60000,   // 1 minute for API data
     onSuccess: (data) => {
-      // Update Zustand store with fresh data
-      setCryptoData(symbol, data)
-      clearError(symbol)
-      console.log(`Updated ${symbol} in store:`, data)
+      // Only update store if not using WebSocket or as fallback
+      if (!isRealTimeActive || connectionStatus !== 'connected') {
+        setCryptoData(symbol, {
+          ...data,
+          source: 'api',
+          realtimeUpdate: false
+        })
+        clearError(symbol)
+        console.log(`Updated ${symbol} from API:`, data)
+      }
     },
     onError: (error) => {
       console.error(`Error fetching ${symbol}:`, error)
@@ -40,8 +63,11 @@ export const useCryptoData = (symbol) => {
 
   // Sync loading state with Zustand
   useEffect(() => {
-    setLoading(symbol, query.isLoading)
-  }, [query.isLoading, symbol, setLoading])
+    // Don't show loading when WebSocket is providing real-time data
+    const shouldShowLoading = query.isLoading && 
+      (!isRealTimeActive || !hasRealtimeData)
+    setLoading(symbol, shouldShowLoading)
+  }, [query.isLoading, symbol, setLoading, isRealTimeActive, hasRealtimeData])
 
   // Manual refresh function
   const refresh = () => {
@@ -60,49 +86,34 @@ export const useCryptoData = (symbol) => {
     })
   }
 
+  // Determine which data to return (WebSocket takes priority)
+  const finalData = (isRealTimeActive && realtimeData[symbol]) 
+    ? realtimeData[symbol]  // Use WebSocket data
+    : query.data            // Fallback to API data
+
   return {
-    data: query.data,
-    isLoading: query.isLoading,
+    data: finalData,
+    isLoading: query.isLoading && (!isRealTimeActive || !hasRealtimeData),
     error: query.error,
     isError: query.isError,
-    isSuccess: query.isSuccess,
+    isSuccess: query.isSuccess || (isRealTimeActive && !!realtimeData[symbol]),
     isFetching: query.isFetching,
     refresh,
     prefetchRelated,
     // Additional metadata
     lastFetch: query.dataUpdatedAt,
-    nextRefetch: query.dataUpdatedAt + (query.refetchInterval || 120000)
+    nextRefetch: query.dataUpdatedAt + (query.refetchInterval || 120000),
+    // NEW: WebSocket integration info
+    isRealTime: isRealTimeActive && connectionStatus === 'connected',
+    dataSource: finalData?.source || 'api',
+    hasWebSocketData: !!realtimeData[symbol]
   }
 }
 
-// Hook for API health monitoring
-export const useApiHealth = () => {
-  const query = useQuery({
-    queryKey: queryKeys.crypto.health,
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE}/health`)
-      if (!response.ok) {
-        throw new Error('API health check failed')
-      }
-      return response.json()
-    },
-    // Check health less frequently
-    refetchInterval: 5 * 60 * 1000, // 5 minutes
-    staleTime: 2 * 60 * 1000 // 2 minutes
-  })
-
-  return {
-    isHealthy: query.isSuccess && query.data?.success,
-    healthData: query.data?.data || query.data,
-    isChecking: query.isLoading,
-    error: query.error,
-    refresh: () => query.refetch()
-  }
-}
-
-// Hook for multiple crypto assets
+// Enhanced multiple crypto hook
 export const useMultipleCrypto = (symbols = ['bitcoin', 'ethereum']) => {
   const queries = symbols.map(symbol => useCryptoData(symbol))
+  const { isRealTimeActive, connectionStatus } = useCryptoStore()
   
   return {
     queries,
@@ -113,19 +124,30 @@ export const useMultipleCrypto = (symbols = ['bitcoin', 'ethereum']) => {
     data: symbols.reduce((acc, symbol, index) => {
       acc[symbol] = queries[index].data
       return acc
-    }, {})
+    }, {}),
+    // NEW: Real-time integration info
+    isRealTime: isRealTimeActive && connectionStatus === 'connected',
+    realTimeCount: queries.filter(q => q.hasWebSocketData).length,
+    allRealTime: queries.every(q => q.hasWebSocketData)
   }
 }
 
-// Hook for real-time updates
+// Enhanced real-time updates hook (now WebSocket-powered)
 export const useRealTimeUpdates = () => {
-  const { isRealTimeActive, refreshInterval } = useCryptoStore()
+  const { 
+    isRealTimeActive, 
+    connectionStatus,
+    refreshInterval,
+    forceWebSocketRefresh 
+  } = useCryptoStore()
+  
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (!isRealTimeActive) return
+    // Only use polling as fallback when WebSocket not available
+    if (!isRealTimeActive || connectionStatus === 'connected') return
 
-    console.log('Starting real-time updates...')
+    console.log('Using polling fallback (WebSocket unavailable)...')
     
     const interval = setInterval(() => {
       // Invalidate all crypto queries to trigger refetch
@@ -133,13 +155,39 @@ export const useRealTimeUpdates = () => {
     }, refreshInterval)
 
     return () => {
-      console.log('Stopping real-time updates...')
+      console.log('Stopping polling fallback...')
       clearInterval(interval)
     }
-  }, [isRealTimeActive, refreshInterval, queryClient])
+  }, [isRealTimeActive, connectionStatus, refreshInterval, queryClient])
 
   return {
     isActive: isRealTimeActive,
-    interval: refreshInterval
+    isWebSocket: connectionStatus === 'connected',
+    interval: refreshInterval,
+    forceRefresh: forceWebSocketRefresh
+  }
+}
+
+// Keep existing API health hook
+export const useApiHealth = () => {
+  const query = useQuery({
+    queryKey: queryKeys.crypto.health,
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/health`)
+      if (!response.ok) {
+        throw new Error('API health check failed')
+      }
+      return response.json()
+    },
+    refetchInterval: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000
+  })
+
+  return {
+    isHealthy: query.isSuccess && query.data?.success,
+    healthData: query.data?.data || query.data,
+    isChecking: query.isLoading,
+    error: query.error,
+    refresh: () => query.refetch()
   }
 }

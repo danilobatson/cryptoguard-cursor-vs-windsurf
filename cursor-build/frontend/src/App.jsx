@@ -16,7 +16,9 @@ import {
   IconBell,
   IconSettings,
   IconBrandGithub,
-  IconExternalLink
+  IconExternalLink,
+  IconWifi,
+  IconWifiOff
 } from '@tabler/icons-react'
 import DashboardGrid from './components/dashboard/DashboardGrid'
 import AlertModal from './components/alerts/AlertModal'
@@ -24,9 +26,10 @@ import useCryptoStore from './stores/useCryptoStore'
 import useAlertStore from './stores/useAlertStore'
 import useNotifications from './hooks/useNotifications.jsx'
 import useAlertInitialization from './hooks/useAlertInitialization'
+import { useConnectionStatus } from './hooks/useWebSocket'
 
 function App() {
-  const { notifications, addNotification } = useCryptoStore()
+  const { notifications, addNotification, connectionStatus } = useCryptoStore()
   const { getActiveAlerts, getTriggeredAlerts } = useAlertStore()
 
   // Initialize notification system
@@ -35,13 +38,16 @@ function App() {
   // Initialize alert system with persistence
   const { isInitialized, activeAlertsCount } = useAlertInitialization()
 
+  // NEW: WebSocket connection monitoring
+  const { isConnected, status, healthScore, reconnectAttempts } = useConnectionStatus()
+
   // Welcome notification on first load
   useEffect(() => {
     const timer = setTimeout(() => {
       addNotification({
         type: 'success',
         title: '🚀 CryptoGuard Active!',
-        message: 'Real-time crypto data and alert system ready'
+        message: 'Real-time crypto data and alert system ready. Click LIVE for WebSocket updates!'
       })
     }, 1000)
 
@@ -64,153 +70,143 @@ function App() {
     })
   }
 
-  const unreadNotifications = notifications.filter(n => !n.read).length
-  const activeAlerts = getActiveAlerts()
-  const triggeredAlerts = getTriggeredAlerts()
+  // NEW: Connection status indicator
+  const getConnectionIcon = () => {
+    if (isConnected) return <IconWifi size={16} color="green" />
+    if (status === 'connecting') return <IconWifi size={16} color="orange" />
+    return <IconWifiOff size={16} color="gray" />
+  }
+
+  const getConnectionText = () => {
+    if (isConnected) return 'WebSocket Connected'
+    if (status === 'connecting') return 'Connecting...'
+    if (status === 'error') return `Connection Error (${reconnectAttempts} retries)`
+    return 'Disconnected'
+  }
 
   return (
-    <>
-      <AppShell
-        header={{ height: 80 }}
-        padding="xl"
-      >
-        <AppShell.Header>
-          <Container size="xl" h="100%">
-            <Group h="100%" justify="space-between" align="center">
-              <Group gap="md">
-                <IconCoin
-                  size={36}
-                  color="var(--mantine-color-bitcoin-6)"
-                  className="crypto-pulse"
-                />
-                <Box>
-                  <Title order={1} style={{ color: '#FFFFFF' }} size="h2">
-                    {import.meta.env.VITE_APP_NAME || 'CryptoGuard'}
-                  </Title>
-                  <Text size="md" fw={500} style={{ color: '#C1C2C5' }}>
-                    Real-time Crypto Alert System
-                  </Text>
-                </Box>
-              </Group>
+    <AppShell padding="md">
+      <AppShell.Header height={70}>
+        <Container size="xl" h="100%">
+          <Group h="100%" justify="space-between" align="center">
+            {/* Logo Section */}
+            <Group gap="md">
+              <Box
+                style={{
+                  background: 'linear-gradient(135deg, #F7931A 0%, #FFB84D 100%)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <IconCoin size={28} color="white" />
+              </Box>
+              
+              <Box>
+                <Title order={2} size="h3" fw={700} c="white">
+                  CryptoGuard
+                </Title>
+                <Text size="xs" c="dimmed">
+                  Real-time Crypto Alert System
+                </Text>
+              </Box>
+            </Group>
 
-              <Group gap="md">
-                {/* Live Status */}
-                <Badge
+            {/* Center Section - NEW: Connection Status */}
+            <Group gap="lg">
+              <Tooltip label={getConnectionText()} position="bottom">
+                <Group gap="xs">
+                  {getConnectionIcon()}
+                  <Text size="sm" c={isConnected ? 'green' : 'dimmed'}>
+                    {isConnected ? 'LIVE' : status.toUpperCase()}
+                  </Text>
+                  {healthScore && (
+                    <Badge size="xs" variant="light" color={isConnected ? 'green' : 'gray'}>
+                      {healthScore}%
+                    </Badge>
+                  )}
+                </Group>
+              </Tooltip>
+            </Group>
+
+            {/* Right Section */}
+            <Group gap="md">
+              {/* Alert Counter */}
+              <Tooltip label="Active Alerts" position="bottom">
+                <ActionIcon
                   variant="light"
-                  color="green"
-                  leftSection="��"
+                  color="orange"
+                  size="lg"
+                  onClick={handleSetupAlerts}
+                >
+                  <IconBell size={18} />
+                  {activeAlertsCount > 0 && (
+                    <Badge
+                      size="xs"
+                      variant="filled"
+                      color="red"
+                      style={{
+                        position: 'absolute',
+                        top: -2,
+                        right: -2,
+                        minWidth: 16,
+                        height: 16,
+                        padding: 0,
+                        fontSize: '10px'
+                      }}
+                    >
+                      {activeAlertsCount}
+                    </Badge>
+                  )}
+                </ActionIcon>
+              </Tooltip>
+
+              {/* Settings */}
+              <Tooltip label="Settings" position="bottom">
+                <ActionIcon variant="light" color="gray" size="lg">
+                  <IconSettings size={18} />
+                </ActionIcon>
+              </Tooltip>
+
+              {/* GitHub */}
+              <Tooltip label="View Source Code" position="bottom">
+                <ActionIcon
+                  variant="light"
+                  color="blue"
+                  size="lg"
+                  onClick={handleViewGitHub}
+                >
+                  <IconBrandGithub size={18} />
+                </ActionIcon>
+              </Tooltip>
+
+              {/* External Link */}
+              <Tooltip label="Portfolio" position="bottom">
+                <ActionIcon
+                  component="a"
+                  href="https://danilobatson.github.io/"
+                  target="_blank"
+                  variant="light"
+                  color="violet"
                   size="lg"
                 >
-                  Live Data
-                </Badge>
-
-                {/* Alert Status - Enhanced with persistence indicator */}
-                {isInitialized && activeAlerts.length > 0 && (
-                  <Tooltip label={`${activeAlerts.length} active alerts, ${triggeredAlerts.length} triggered (persistent)`}>
-                    <Badge
-                      variant="light"
-                      color={triggeredAlerts.length > 0 ? "orange" : "blue"}
-                      leftSection={<IconBell size={12} />}
-                      size="lg"
-                    >
-                      {activeAlerts.length} alerts
-                    </Badge>
-                  </Tooltip>
-                )}
-
-                {/* Storage Status Indicator */}
-                {isInitialized && (
-                  <Tooltip label="Alerts are saved and will persist across browser sessions">
-                    <Badge
-                      variant="light"
-                      color="green"
-                      size="sm"
-                    >
-                      💾 Saved
-                    </Badge>
-                  </Tooltip>
-                )}
-
-                {/* Notifications */}
-                <Tooltip label={`${unreadNotifications} unread notifications`}>
-                  <ActionIcon
-                    variant="light"
-                    color="blue"
-                    size="lg"
-                    style={{ position: 'relative' }}
-                    onClick={() => addNotification({
-                      type: 'info',
-                      title: 'Notification Center',
-                      message: 'Advanced notification management coming soon!'
-                    })}
-                  >
-                    <IconBell size={18} />
-                    {unreadNotifications > 0 && (
-                      <Box
-                        style={{
-                          position: 'absolute',
-                          top: -2,
-                          right: -2,
-                          width: 16,
-                          height: 16,
-                          borderRadius: '50%',
-                          backgroundColor: 'var(--mantine-color-red-6)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '10px',
-                          color: 'white',
-                          fontWeight: 700
-                        }}
-                      >
-                        {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                      </Box>
-                    )}
-                  </ActionIcon>
-                </Tooltip>
-
-                {/* Settings */}
-                <Tooltip label="Settings">
-                  <ActionIcon
-                    variant="light"
-                    color="gray"
-                    size="lg"
-                    onClick={() => addNotification({
-                      type: 'info',
-                      title: 'Settings',
-                      message: 'Advanced settings panel coming in next update!'
-                    })}
-                  >
-                    <IconSettings size={18} />
-                  </ActionIcon>
-                </Tooltip>
-
-                {/* GitHub */}
-                <Tooltip label="View source code">
-                  <ActionIcon
-                    variant="light"
-                    color="gray"
-                    size="lg"
-                    onClick={handleViewGitHub}
-                  >
-                    <IconBrandGithub size={18} />
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
+                  <IconExternalLink size={18} />
+                </ActionIcon>
+              </Tooltip>
             </Group>
-          </Container>
-        </AppShell.Header>
+          </Group>
+        </Container>
+      </AppShell.Header>
 
-        <AppShell.Main>
-          <Container size="xl">
-            <DashboardGrid />
-          </Container>
-        </AppShell.Main>
-      </AppShell>
-
-      {/* Alert Modal - Rendered globally */}
-      <AlertModal />
-    </>
+      <AppShell.Main>
+        <Container size="xl">
+          <DashboardGrid />
+          <AlertModal />
+        </Container>
+      </AppShell.Main>
+    </AppShell>
   )
 }
 
