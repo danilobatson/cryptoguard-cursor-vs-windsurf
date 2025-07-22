@@ -428,7 +428,7 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
           <Box ta="center">
             <Text size="xs" c="dimmed">Data Points</Text>
             <Text fw={600} c="green" size="sm">
-              {priceHistory.length}/50
+              {priceHistory.length}
             </Text>
           </Box>
         </Group>

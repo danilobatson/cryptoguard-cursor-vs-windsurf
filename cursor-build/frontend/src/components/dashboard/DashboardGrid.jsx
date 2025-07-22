@@ -30,8 +30,10 @@ import {
 	IconAlertTriangle,
 	IconWifi,
 	IconWifiOff,
+	IconClock,
+	IconCloudDownload,
 } from '@tabler/icons-react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import CryptoCard from './CryptoCard';
 import PriceChart from './PriceChart';
 import AlertsList from '../alerts/AlertsList';
@@ -64,33 +66,47 @@ const DashboardGrid = () => {
 		hasError,
 	} = useMultipleCrypto(['bitcoin', 'ethereum']);
 
-  console.log('cryptoData', cryptoData)
-	// WebSocket connection status
-	const isConnected = connectionStatus === 'connected';
-	const isRealTime = isRealTimeActive && isConnected;
-	const realTimeCount = Object.values(cryptoData).filter(
-		(data) => data?.source === 'websocket'
+	// console.log removed to reduce spam
+
+	// Updated: Polling-based status instead of WebSocket
+	const isConnected = !hasError && Object.keys(cryptoData).length > 0;
+	const isPollingActive = isRealTimeActive;
+	const activeDataCount = Object.values(cryptoData).filter(
+		(data) => data && data.price
 	).length;
 	const healthScore = isConnected ? 100 : 0;
 
-	// REMOVED: Duplicate alert checking - useAlertChecker handles this now
+	// Calculate data freshness for all assets
+	const getOverallFreshness = () => {
+		const ages = Object.values(cryptoData)
+			.filter(data => data?.lastUpdated)
+			.map(data => (Date.now() - new Date(data.lastUpdated).getTime()) / 60000);
 
-	const handleToggleRealTime = () => {
-		if (isRealTimeActive) {
+		if (ages.length === 0) return 'unknown';
+		const avgAge = ages.reduce((a, b) => a + b, 0) / ages.length;
+
+		if (avgAge < 1) return 'fresh';
+		if (avgAge < 3) return 'recent';
+		if (avgAge < 5) return 'aging';
+		return 'stale';
+	};
+
+	const handleTogglePolling = () => {
+		if (isPollingActive) {
 			stopRealTime();
 			addNotification({
 				type: 'info',
-				title: 'Real-time Updates Paused',
-				message: 'Dashboard will show cached data only',
+				title: 'Auto-refresh Paused',
+				message: 'Data updates have been paused. Use manual refresh to update.',
 			});
 		} else {
 			startRealTime();
 			addNotification({
 				type: 'success',
-				title: 'Real-time Updates Active',
-				message: `Dashboard will refresh every ${
+				title: 'Auto-refresh Active',
+				message: `Data will refresh every ${
 					refreshInterval / 1000
-				} seconds`,
+				} seconds automatically`,
 			});
 		}
 	};
@@ -121,12 +137,23 @@ const DashboardGrid = () => {
 		});
 	};
 
+	const freshness = getOverallFreshness();
+	const freshnessConfig = {
+		fresh: { color: 'green', label: 'FRESH', icon: IconCloudDownload },
+		recent: { color: 'blue', label: 'RECENT', icon: IconClock },
+		aging: { color: 'yellow', label: 'AGING', icon: IconClock },
+		stale: { color: 'red', label: 'STALE', icon: IconAlertTriangle },
+		unknown: { color: 'gray', label: 'UNKNOWN', icon: IconAlertTriangle }
+	};
+
+	const currentFreshness = freshnessConfig[freshness] || freshnessConfig.unknown;
+
 	return (
-		<Stack gap='lg'>
+		<Stack gap='lg' mt='40px'>
 			{/* Notification Permission Banner */}
 			<NotificationBanner />
 
-			{/* Connection Status Card */}
+			{/* Data Status Card - Updated for Polling */}
 			<Card
 				padding='lg'
 				radius='md'
@@ -140,42 +167,49 @@ const DashboardGrid = () => {
 						<Box>
 							<Group gap='xs'>
 								<Text fw={600} c='white'>
-									Real-time Data Status
+									Data Status
 								</Text>
 								<Badge
 									size='sm'
 									color={isConnected ? 'green' : 'red'}
 									variant='light'>
-									{isConnected ? 'CONNECTED' : 'DISCONNECTED'}
+									{isConnected ? 'API CONNECTED' : 'CONNECTION ISSUES'}
+								</Badge>
+								<Badge
+									size='sm'
+									color={currentFreshness.color}
+									variant='light'
+									leftSection={React.createElement(currentFreshness.icon, { size: 12 })}>
+									{currentFreshness.label}
 								</Badge>
 							</Group>
 							<Text size='sm' c='dimmed'>
-								{isRealTime
-									? `Live data active • ${realTimeCount} sources`
-									: 'Using cached API data'}
+								{isPollingActive
+									? `Auto-refresh active • ${activeDataCount} crypto assets • Updates every ${refreshInterval/1000}s`
+									: `Manual refresh mode • ${activeDataCount} crypto assets loaded`}
 							</Text>
 						</Box>
 					</Group>
 
 					<Group gap='md'>
-						{/* Real-time Toggle */}
+						{/* Polling Toggle */}
 						<Tooltip
 							label={
-								isRealTimeActive
-									? 'Pause real-time updates'
-									: 'Start real-time updates'
+								isPollingActive
+									? 'Pause automatic updates'
+									: 'Enable automatic updates'
 							}>
 							<ActionIcon
 								variant='light'
-								color={isRealTimeActive ? 'orange' : 'green'}
+								color={isPollingActive ? 'orange' : 'green'}
 								size='lg'
-								onClick={handleToggleRealTime}
+								onClick={handleTogglePolling}
 								style={{
-									backgroundColor: isRealTimeActive
+									backgroundColor: isPollingActive
 										? 'rgba(255, 193, 7, 0.1)'
 										: 'rgba(76, 175, 80, 0.1)',
 								}}>
-								{isRealTimeActive ? (
+								{isPollingActive ? (
 									<IconPlayerPause size={18} />
 								) : (
 									<IconPlayerPlay size={18} />
@@ -206,8 +240,7 @@ const DashboardGrid = () => {
 						mt='md'>
 						<Group justify='space-between'>
 							<Text size='sm'>
-								WebSocket connection lost. Data will update automatically when
-								connected.
+								Unable to connect to API. Check your internet connection.
 							</Text>
 							{healthScore !== undefined && (
 								<Progress value={healthScore} size='sm' w={100} />
@@ -216,20 +249,19 @@ const DashboardGrid = () => {
 					</Alert>
 				)}
 
-				{/* Real-time Data Status */}
-				{isRealTime && isConnected && realTimeCount > 0 && (
+				{/* Active Polling Status */}
+				{isPollingActive && isConnected && activeDataCount > 0 && (
 					<Alert
-						icon={<IconWifi size={16} />}
-						color='green'
+						icon={<IconCloudDownload size={16} />}
+						color='blue'
 						variant='light'
 						mt='md'>
 						<Group justify='space-between'>
 							<Text size='sm'>
-								🔴 LIVE: Receiving real-time updates for {realTimeCount}{' '}
-								cryptocurrencies via WebSocket
+								📡 POLLING: Automatically refreshing {activeDataCount} cryptocurrency prices every {refreshInterval/1000} seconds
 							</Text>
-							<Badge color='green' variant='light'>
-								{realTimeCount}/{Object.keys(cryptoData).length} Real-time
+							<Badge color='blue' variant='light'>
+								{activeDataCount} Active
 							</Badge>
 						</Group>
 					</Alert>
@@ -261,18 +293,20 @@ const DashboardGrid = () => {
 						{/* Hero Section */}
 						<HeroSection cryptoData={cryptoData} />
 
-						{/* Crypto Cards Grid */}
+						{/* Crypto Cards Grid - Updated to remove websocket checks */}
 						<Grid>
-							{Object.entries(cryptoData).map(([symbol, data]) => (
-								<Grid.Col key={symbol} span={{ base: 12, md: 6 }}>
-									<CryptoCard
-										symbol={symbol}
-										data={data}
-										isRealTime={data?.source === 'websocket'}
-										showRealTimeIndicator={true}
-									/>
-								</Grid.Col>
-							))}
+							{Object.entries(cryptoData)
+								.sort(([a], [b]) => a.localeCompare(b))
+								.map(([symbol, data]) => (
+									<Grid.Col key={symbol} span={{ base: 12, md: 6 }}>
+										<CryptoCard
+											symbol={symbol}
+											data={data}
+											isRealTime={false} // No WebSocket, using polling
+											showRealTimeIndicator={true}
+										/>
+									</Grid.Col>
+								))}
 						</Grid>
 
 						{/* Quick Actions */}
@@ -318,15 +352,17 @@ const DashboardGrid = () => {
 				{/* Charts Tab */}
 				<Tabs.Panel value='charts' pt='md'>
 					<Grid>
-						{Object.entries(cryptoData).map(([symbol, data]) => (
-							<Grid.Col key={symbol} span={{ base: 12, lg: 6 }}>
-								<PriceChart
-									symbol={symbol}
-									data={data}
-									isRealTime={data?.source === 'websocket'}
-								/>
-							</Grid.Col>
-						))}
+						{Object.entries(cryptoData)
+							.sort(([a], [b]) => a.localeCompare(b))
+							.map(([symbol, data]) => (
+								<Grid.Col key={symbol} span={{ base: 12, lg: 6 }}>
+									<PriceChart
+										symbol={symbol}
+										data={data}
+										isRealTime={false} // No WebSocket, using polling
+									/>
+								</Grid.Col>
+							))}
 					</Grid>
 				</Tabs.Panel>
 

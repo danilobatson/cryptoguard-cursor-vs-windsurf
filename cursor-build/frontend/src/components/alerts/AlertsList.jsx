@@ -107,11 +107,6 @@ const AlertCard = ({
 
 	// 🔥 FIX: Safe price formatting to prevent NaN
 	const formatPrice = (price) => {
-		console.log(`�� [AlertCard] Formatting price:`, {
-			price,
-			type: typeof price,
-		});
-
 		if (price === null || price === undefined) {
 			return 'No data';
 		}
@@ -211,13 +206,7 @@ const AlertCard = ({
 										}>
 										{formatPrice(currentPrice)}
 									</Text>
-									{debugInfo && (
-										<Tooltip label={`Debug: ${debugInfo}`}>
-											<Badge size='xs' variant='light' color='blue'>
-												?
-											</Badge>
-										</Tooltip>
-									)}
+									
 								</Group>
 							</Box>
 						</Group>
@@ -352,13 +341,6 @@ const AlertsList = () => {
 		const data = cryptoData?.[symbolKey];
 
 		// Comprehensive debug logging
-		console.log(`🔍 [AlertsList] Getting price for ${symbol}:`, {
-			symbolKey,
-			cryptoDataKeys: Object.keys(cryptoData || {}),
-			data: data,
-			dataPrice: data?.price,
-			dataType: typeof data?.price,
-		});
 
 		if (!data) {
 			console.warn(`❌ [AlertsList] No data found for symbol: ${symbol}`);
@@ -487,29 +469,6 @@ const AlertsList = () => {
 				</Grid.Col>
 			</Grid>
 
-			{/* Debug Info - Show current crypto data */}
-			{cryptoData && Object.keys(cryptoData).length > 0 && (
-				<Alert color='blue' variant='light'>
-					<Text size='sm' fw={500}>
-						🔍 Debug: Real Crypto Store Data
-					</Text>
-					<Text size='xs' mt='xs'>
-						{Object.entries(cryptoData)
-							.map(([symbol, data]) => {
-								const price =
-									data?.price || data?.close || data?.current_price || 'N/A';
-								const source = data?.source || 'API';
-								return `${symbol.toUpperCase()}: $${
-									typeof price === 'number' ? price.toLocaleString() : price
-								} (${source}) `;
-							})
-							.join(' | ')}
-					</Text>
-					<Text size='xs' c='dimmed' mt='xs'>
-						Store updated: {new Date().toLocaleTimeString()}
-					</Text>
-				</Alert>
-			)}
 
 			{/* Data Source Warning */}
 			{(!cryptoData || Object.keys(cryptoData).length === 0) && (
