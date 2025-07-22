@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import './debug/window-exposure.js'
 import {
   AppShell,
   Group,
@@ -32,7 +33,7 @@ function App() {
 
   // Initialize notification system
   useNotifications()
-  
+
   // Initialize alert system with persistence
   const { isInitialized, activeAlertsCount } = useAlertInitialization()
 
@@ -84,7 +85,7 @@ function App() {
               >
                 <IconCoin size={28} color="white" />
               </Box>
-              
+
               <Box>
                 <Title order={2} size="h3" fw={700} c="white">
                   CryptoGuard
