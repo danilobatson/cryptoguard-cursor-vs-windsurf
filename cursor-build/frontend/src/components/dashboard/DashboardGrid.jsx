@@ -139,7 +139,12 @@ const DashboardGrid = () => {
 
 	return (
 		<Stack gap='xl'>
-			{/* 🚀 HERO SECTION */}
+			{/* 🚀 HERO SECTION - Now properly included! */}
+			<HeroSection 
+				cryptoData={cryptoData}
+				isLoading={isLoading}
+				onCreateAlert={handleCreateAlert}
+			/>
 
 			{/* Dashboard Header */}
 			<Card withBorder style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)' }}>
@@ -159,7 +164,7 @@ const DashboardGrid = () => {
 						</Box>
 					</Group>
 
-					{/* Dashboard Controls */}
+					{/* Dashboard Controls - Enhanced visual feedback */}
 					<Group gap='sm'>
 						<Badge
 							color={hasError ? 'red' : isLoading ? 'yellow' : 'green'}
@@ -202,7 +207,12 @@ const DashboardGrid = () => {
 								variant='light'
 								color={isRealTimeActive ? 'orange' : 'green'}
 								size='lg'
-								onClick={handleToggleRealTime}>
+								onClick={handleToggleRealTime}
+								style={{
+									backgroundColor: isRealTimeActive 
+										? 'rgba(255, 193, 7, 0.1)' 
+										: 'rgba(76, 175, 80, 0.1)'
+								}}>
 								{isRealTimeActive ? (
 									<IconPlayerPause size={18} />
 								) : (
