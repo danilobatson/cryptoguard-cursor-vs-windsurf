@@ -167,12 +167,12 @@ const PriceChart = ({ symbol, data, isRealTime = false }) => {
           {/* Chart Controls */}
           <Group gap="xs">
             <Tooltip label="Refresh chart">
-              <ActionIcon variant="light" color="gray" size="sm">
+              <ActionIcon className="icon-spin" variant="light" color="gray" size="sm">
                 <IconRefresh size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={isFullscreen ? 'Minimize' : 'Fullscreen'}>
-              <ActionIcon 
+              <ActionIcon className="icon-spin" 
                 variant="light" 
                 color="blue" 
                 size="sm"

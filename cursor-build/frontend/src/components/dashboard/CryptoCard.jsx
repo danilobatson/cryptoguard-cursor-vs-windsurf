@@ -86,8 +86,7 @@ const CryptoCard = ({
   }
 
   return (
-    <Card 
-      withBorder
+    <Card withBorder className="crypto-card stagger-item"
       className={isRealTime ? "crypto-glow" : ""}
       style={{ 
         background: `linear-gradient(135deg, rgba(${colors.secondary.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ')}, 0.15) 0%, rgba(${colors.secondary.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ')}, 0.08) 100%)`,

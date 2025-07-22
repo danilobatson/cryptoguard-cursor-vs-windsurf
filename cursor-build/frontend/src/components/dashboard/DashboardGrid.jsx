@@ -136,7 +136,7 @@ const DashboardGrid = () => {
             </Tooltip>
 
             <Tooltip label={isRealTimeActive ? 'Pause updates' : 'Start real-time'}>
-              <ActionIcon
+              <ActionIcon className="icon-spin"
                 color={isRealTimeActive ? 'red' : 'green'}
                 variant="light"
                 onClick={handleToggleRealTime}
@@ -146,7 +146,7 @@ const DashboardGrid = () => {
             </Tooltip>
 
             <Tooltip label="Refresh all data">
-              <ActionIcon
+              <ActionIcon className="icon-spin"
                 color="blue"
                 variant="light"
                 onClick={handleRefreshAll}
@@ -157,7 +157,7 @@ const DashboardGrid = () => {
             </Tooltip>
 
             <Tooltip label="Dashboard settings">
-              <ActionIcon color="gray" variant="light">
+              <ActionIcon className="icon-spin" color="gray" variant="light">
                 <IconSettings size={16} />
               </ActionIcon>
             </Tooltip>
@@ -390,7 +390,7 @@ const DashboardGrid = () => {
               <Text c="dimmed" ta="center">
                 Comprehensive market analysis, correlation matrices, and portfolio performance metrics coming soon.
               </Text>
-              <Button variant="light" color="blue">
+              <Button className="enhanced-button" variant="light" color="blue">
                 Get Notified
               </Button>
             </Stack>

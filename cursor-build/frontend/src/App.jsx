@@ -34,7 +34,7 @@ function App() {
       addNotification({
         type: 'success',
         title: '🚀 CryptoGuard Active!',
-        message: 'Live crypto data dashboard'
+        message: 'Retrieved live crypto data'
       })
     }, 1000)
 
@@ -85,15 +85,7 @@ function App() {
 
             <Group gap="md">
               {/* Live Status */}
-              <Badge
-                color="green"
-                variant="light"
-                size="lg"
-                className="crypto-pulse"
-                leftSection="🟢"
-              >
-                PRODUCTION READY
-              </Badge>
+
 
               {/* Notifications */}
               <Tooltip label={`${unreadNotifications} unread notifications`}>
