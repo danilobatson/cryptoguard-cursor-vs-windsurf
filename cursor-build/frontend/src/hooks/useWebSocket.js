@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import webSocketService from '../services/WebSocketService'
-import useCryptoStore from '../stores/useCryptoStore'
-import useAlertStore from '../stores/useAlertStore'
+import webSocketService from '../services/WebSocketService.js'
+import useCryptoStore from '../stores/useCryptoStore.js'
+import useAlertStore from '../stores/useAlertStore.js'
 
 // Main WebSocket integration hook
 export const useWebSocket = (symbols = ['bitcoin', 'ethereum']) => {

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import webSocketService from '../services/WebSocketService'
+import webSocketService from '../services/WebSocketService.js'
 
 const useCryptoStore = create(
   persist(

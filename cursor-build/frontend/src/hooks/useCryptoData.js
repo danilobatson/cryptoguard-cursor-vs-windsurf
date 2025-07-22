@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { queryKeys, API_BASE } from '../lib/queryClient'
-import useCryptoStore from '../stores/useCryptoStore'
-import { useRealTimeData } from './useWebSocket'
+import useCryptoStore from '../stores/useCryptoStore.js'
+import { useRealTimeData } from './useWebSocket.js'
 
 // Enhanced crypto data hook with WebSocket integration
 export const useCryptoData = (symbol) => {
