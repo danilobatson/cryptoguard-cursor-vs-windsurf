@@ -31,8 +31,9 @@ const CryptoCard = ({
   isRealTime = false, 
   showRealTimeIndicator = true 
 }) => {
-  const { openAlertModal, addNotification } = useAlertStore()
-  const { forceWebSocketRefresh, connectionStatus } = useCryptoStore()
+  // FIXED: Get addNotification from the correct store
+  const { openAlertModal } = useAlertStore()
+  const { forceWebSocketRefresh, connectionStatus, addNotification } = useCryptoStore()
 
   if (!data) {
     return (

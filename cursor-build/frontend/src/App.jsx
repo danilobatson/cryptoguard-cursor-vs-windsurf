@@ -179,3 +179,12 @@ function App() {
 }
 
 export default App
+
+// Import notification utils for testing
+import { testNotification, requestNotificationPermission } from './utils/notificationUtils'
+
+// Expose to window for testing
+if (typeof window !== 'undefined') {
+  window.testNotification = testNotification
+  window.requestNotificationPermission = requestNotificationPermission
+}
